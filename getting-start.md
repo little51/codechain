@@ -54,7 +54,20 @@ make build
 
 ## 测试Tendermint
 
+参考https://github.com/tendermint/tendermint/blob/master/docs/introduction/quick-start.md
 
+```shell
+# 初始tendermint节点，会在~/.tendermint目录下生成配置和密钥文件
+tendermint init
+# 启动内部应用kvstore
+tendermint node --proxy_app=kvstore
+# 检查应用状态
+curl -s localhost:26657/status
+# 发送交易
+curl -s 'localhost:26657/broadcast_tx_commit?tx="abcd"'
+# 查询交易状态
+curl -s 'localhost:26657/abci_query?data="abcd"'
+```
 
 ## vncserver安装
 
