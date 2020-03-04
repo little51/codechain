@@ -1,10 +1,10 @@
 # 开发环境的建立
 
-​	codechain基于Tendermint(以拜占庭容错BFT实现多台机器安全共识的应用)采用golang开发，操作系统选用了ubuntu16.04,为了便于开发，在ubuntu上安装vscode用于go开发的IDE。在开发环境建立之初，初步先建立Tendermint单节点(Single node)，基本上能够满足开发的要求，随着项目的进展再扩展到4个节点组成一个最基本的BFT网络。
+codechain基于Tendermint(以拜占庭容错BFT实现多台机器安全共识的应用)采用golang开发，操作系统选用了ubuntu16.04,为了便于开发，在ubuntu上安装vscode用于go开发的IDE。在开发环境建立之初，初步先建立Tendermint单节点(Single node)，基本上能够满足开发的要求，随着项目的进展再扩展到4个节点组成一个最基本的BFT网络。
 
 ## Tendermint安装
 
-​	Tendermint有两种安装方式，用压缩包直接解压和最新源码编译安装，由于Tendermint在快速开发中，且项目主要要用go实现，所以建议安装go环境和用源码方式安装。安装过程比较简单，但不能按照Tendermint官方的文档安装，那个文档跟不上Tendermint开发的进度，对go的依赖和编译命令都存在问题，我已在Tendermint的github中提了issues(https://github.com/tendermint/tendermint/issues/4499),给出了目前为止正确的安装脚本。
+Tendermint有两种安装方式，用压缩包直接解压和最新源码编译安装，由于Tendermint在快速开发中，且项目主要要用go实现，所以建议安装go环境和用源码方式安装。安装过程比较简单，但不能按照Tendermint官方的文档安装，那个文档跟不上Tendermint开发的进度，对go的依赖和编译命令都存在问题，我已在Tendermint的github中提了issues( https://github.com/tendermint/tendermint/issues/4499 ),给出了目前为止正确的安装脚本。
 
 ​	执行脚本注意以下问题：
 
@@ -71,18 +71,18 @@ curl -s 'localhost:26657/abci_query?data="abcd"'
 
 ## vncserver安装
 
-​	要在ubuntu16.04上安装vscode，必须要用linux桌面系统，如果是远程操作，需要先安装vncserver。安装过程如下：
+要在ubuntu16.04上安装vscode，必须要用linux桌面系统，如果是远程操作，需要先安装vncserver。安装过程如下：
 
 ```shell
-sudo apt-getinstallgnome-session-flashback
 sudo apt-get install gnome-session-flashback
 sudo apt install ubuntu-desktop gnome-panel gnome-settings-daemon metacity nautilus gnome-terminal -y
+sudo apt-get install vnc4server
 vncserver
 cd ~/.vnc
 vi xstartup 
 ```
 
-xstartup内容如下：
+xstartup原来的内容删除掉，改成以下内容：
 
 ```shell
 #!/bin/sh
@@ -104,20 +104,25 @@ gnome-terminal &
 然后重启vncserver，指定分辨率，不然分辨率是800*600，且没办法修改：
 
 ```shell
+# 重启vncserver
 vncserver -kill :1
-vncserver -geometry 1440×900
+# 启动vncserver并指分辨率
+vncserver -geometry 1440x900
+以后每次开机时要调用上面这句起vnc服务
 ```
 
 ## VSCODE安装
 
-​	ubuntu下安装vscode，有多种方法，建议采用deb包安装，https://code.visualstudio.com/Download#
+​	ubuntu下安装vscode，有多种方法，建议采用deb包安装，从 https://code.visualstudio.com/Download# 下载最新版的vscode，用dpkg安装：
 
 ```shell
-sudo dpkg -i code_1.31.1-1549938243_amd64.deb
-安装后，快捷方式会出现在ubuntu主菜单的开发工具下，但点不开，需要改以下文件：
+sudo dpkg -i code_xxxx.deb
+安装后，快捷方式会出现在ubuntu主菜单的“编程”下，但点不开，需要改以下文件：
 sudo cp /usr/lib/x86_64-linux-gnu/libxcb.so.1 /usr/share/code/
 cd /usr/share/code
 sudo sed -i 's/BIG-REQUESTS/_IG-REQUESTS/' libxcb.so.1
 ```
 
 ## 第一个应用
+
+to-do
