@@ -125,4 +125,65 @@ sudo sed -i 's/BIG-REQUESTS/_IG-REQUESTS/' libxcb.so.1
 
 ## 第一个应用
 
-to-do
+Tendermint的hello world！参照：  https://docs.tendermint.com/master/guides/go.html ，但由于文档的叙述顺序问题，极易出错，而且要考虑到golang的包依赖和包下载速度的问题，照搬文档问题很多，所以将文档中的代码进行了整理。
+
+### Clone源码
+
+```shell
+cd ~
+git clone https://github.com/little51/codechain
+```
+
+### 源码文件说明
+
+在~/codechain/example/kvstore目录下，有三个文件：main.go和app.go是文档中提到的。go.mod用于go的包管理，类似于node.js的npm使用的package.json。首次用以下命令生成后，以后用go build时，会自动下载源码中用到的依赖包，比npm更智能一些。
+
+```shell
+go mod init github.com/codechain/example/kvstore
+```
+
+这样，就用使用到go的新特性:Go modules，而不是用传统的gopath,这样的好处有二：1、源程序不需要再放到gopath下 2、可以使用goproxy下载依赖包（如果不用goproxy，网速慢得几乎无法下载go依赖包）,在go build之前，确保以下命令被执行：
+
+```shell
+export GO111MODULE=on
+export GOPROXY=https://goproxy.io
+```
+
+### 编译源码
+
+```shell
+cd ~/codechain/example/kvstore
+go build
+```
+
+### 初始化Tendermint
+
+```shell
+rm -rf /tmp/kvstore
+TMHOME="/tmp/kvstore" tendermint init
+```
+
+### 运行应用
+
+```shell
+rm example.sock
+./kvstore
+```
+
+### 运行Tendermint
+
+在另一个控制台中，执行
+
+```shell
+TMHOME="/tmp/kvstore" tendermint node --proxy_app=unix://example.sock
+```
+
+### 测试
+
+再开一个控制台，执行
+
+```shell
+curl -s 'localhost:26657/broadcast_tx_commit?tx="tendermint=rocks"'
+```
+
+
