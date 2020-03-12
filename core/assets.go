@@ -6,13 +6,9 @@ import (
 	"fmt"
 
 	abcitypes "github.com/tendermint/tendermint/abci/types"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
-
-type Assets struct {
-	key   string
-	value string
-}
 
 // AssetsApplication 数据库变量.
 type AssetsApplication struct {
@@ -47,6 +43,7 @@ func (app *AssetsApplication) isValid(tx []byte) (code uint32) {
 
 // DeliverTx 交易送达响应 .
 func (app *AssetsApplication) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDeliverTx {
+	fmt.Println(string(req.Tx))
 	code := app.isValid(req.Tx)
 	if code != 0 {
 		return abcitypes.ResponseDeliverTx{Code: code}
@@ -54,9 +51,9 @@ func (app *AssetsApplication) DeliverTx(req abcitypes.RequestDeliverTx) abcitype
 	parts := bytes.Split(req.Tx, []byte("="))
 	key, value := string(parts[0]), string(parts[1])
 	collection := app.db.Database("chain").Collection("assets")
-	assets := Assets{key, value}
-	fmt.Println("tx:", assets)
-	insertResult, err := collection.InsertOne(context.TODO(), &assets)
+	assets := bson.M{"key": string(key), "value": string(value)}
+	fmt.Println(assets)
+	insertResult, err := collection.InsertOne(context.TODO(), assets)
 	if err != nil {
 		panic(err)
 	}
@@ -77,31 +74,36 @@ func (app *AssetsApplication) Commit() abcitypes.ResponseCommit {
 
 // Query 查询交易 .
 func (app *AssetsApplication) Query(reqQuery abcitypes.RequestQuery) (resQuery abcitypes.ResponseQuery) {
-	/*resQuery.Key = reqQuery.Data
-	err := app.db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get(reqQuery.Data)
-		if err != nil && err != badger.ErrKeyNotFound {
-			return err
-		}
-		if err == badger.ErrKeyNotFound {
-			resQuery.Log = "does not exist"
-		} else {
-			return item.Value(func(val []byte) error {
-				resQuery.Log = "exists"
-				resQuery.Value = val
-				return nil
-			})
-		}
-		return nil
-	})
+	parts := bytes.Split(reqQuery.Data, []byte("="))
+	value := string(parts[1])
+	filter := bson.M{"key": string(value)}
+	collection := app.db.Database("chain").Collection("assets")
+	assets := bson.M{}
+	err := collection.FindOne(context.TODO(), filter).Decode(&assets)
 	if err != nil {
-		panic(err)
-	}*/
+		error := fmt.Sprintf("%s", err)
+		resQuery.Code = 1
+		resQuery.Log = error
+		resQuery.Value = nil
+	} else {
+		if value, ok := assets["value"].(string); ok {
+			resQuery.Value = []byte(value)
+			resQuery.Info = value
+			resQuery.Code = 0
+			resQuery.Log = ""
+		} else {
+			resQuery.Value = nil
+			resQuery.Code = 1
+			resQuery.Log = "error type"
+		}
+	}
 	return
 }
 
 // InitChain 初始化链 .
-func (AssetsApplication) InitChain(req abcitypes.RequestInitChain) abcitypes.ResponseInitChain {
+func (app *AssetsApplication) InitChain(req abcitypes.RequestInitChain) abcitypes.ResponseInitChain {
+	collection := app.db.Database("chain").Collection("assets")
+	collection.Drop(context.TODO())
 	return abcitypes.ResponseInitChain{}
 }
 
