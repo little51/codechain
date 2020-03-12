@@ -10,29 +10,29 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// AssetsApplication 数据库变量.
+// AssetsApplication mongodb connection.
 type AssetsApplication struct {
 	db *mongo.Client
 }
 
 var _ abcitypes.Application = (*AssetsApplication)(nil)
 
-// NewAssetsApplication AssetsApplication构造函数，db变量由main.go传入 .
+// NewAssetsApplication mongodb connection come from main.go .
 func NewAssetsApplication(db *mongo.Client) *AssetsApplication {
 	return &AssetsApplication{db: db}
 }
 
-// Info .
+// Info interface.
 func (AssetsApplication) Info(req abcitypes.RequestInfo) abcitypes.ResponseInfo {
 	return abcitypes.ResponseInfo{}
 }
 
-// SetOption .
+// SetOption interface.
 func (AssetsApplication) SetOption(req abcitypes.RequestSetOption) abcitypes.ResponseSetOption {
 	return abcitypes.ResponseSetOption{}
 }
 
-// isValid 校验交易串是否合法
+// isValid
 func (app *AssetsApplication) isValid(tx []byte) (code uint32) {
 	parts := bytes.Split(tx, []byte("="))
 	if len(parts) != 2 {
@@ -41,7 +41,7 @@ func (app *AssetsApplication) isValid(tx []byte) (code uint32) {
 	return 0
 }
 
-// DeliverTx 交易送达响应 .
+// DeliverTx check it and save to mongodb.
 func (app *AssetsApplication) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDeliverTx {
 	fmt.Println(string(req.Tx))
 	code := app.isValid(req.Tx)
@@ -61,18 +61,18 @@ func (app *AssetsApplication) DeliverTx(req abcitypes.RequestDeliverTx) abcitype
 	return abcitypes.ResponseDeliverTx{Code: 0}
 }
 
-// CheckTx 交易校验响应 .
+// CheckTx check tx format .
 func (app *AssetsApplication) CheckTx(req abcitypes.RequestCheckTx) abcitypes.ResponseCheckTx {
 	code := app.isValid(req.Tx)
 	return abcitypes.ResponseCheckTx{Code: code, GasWanted: 1}
 }
 
-// Commit 交易提交响应 .
+// Commit interface .
 func (app *AssetsApplication) Commit() abcitypes.ResponseCommit {
 	return abcitypes.ResponseCommit{Data: []byte{}}
 }
 
-// Query 查询交易 .
+// Query  query document from mongledb.
 func (app *AssetsApplication) Query(reqQuery abcitypes.RequestQuery) (resQuery abcitypes.ResponseQuery) {
 	parts := bytes.Split(reqQuery.Data, []byte("="))
 	value := string(parts[1])
@@ -100,19 +100,19 @@ func (app *AssetsApplication) Query(reqQuery abcitypes.RequestQuery) (resQuery a
 	return
 }
 
-// InitChain 初始化链 .
+// InitChain drop collection .
 func (app *AssetsApplication) InitChain(req abcitypes.RequestInitChain) abcitypes.ResponseInitChain {
 	collection := app.db.Database("chain").Collection("assets")
 	collection.Drop(context.TODO())
 	return abcitypes.ResponseInitChain{}
 }
 
-// BeginBlock .
+// BeginBlock interface.
 func (app *AssetsApplication) BeginBlock(req abcitypes.RequestBeginBlock) abcitypes.ResponseBeginBlock {
 	return abcitypes.ResponseBeginBlock{}
 }
 
-// EndBlock .
+// EndBlock interface.
 func (AssetsApplication) EndBlock(req abcitypes.RequestEndBlock) abcitypes.ResponseEndBlock {
 	return abcitypes.ResponseEndBlock{}
 }
