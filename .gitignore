@@ -16,3 +16,4 @@
 /.vscode
 /pkg
 /example/kvstore/go.sum
+/core/core
