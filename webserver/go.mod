@@ -1,4 +1,4 @@
-module github.com/codechain/api
+module github.com/codechain/webserver
 
 go 1.14
 
