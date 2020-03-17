@@ -9,7 +9,8 @@ func main() {
 			"message": "ok",
 		})
 	})
-	router.POST("/account/new", NewAccount)
-	router.POST("/account/sign", Sign)
+	router.POST("account/new", NewAccount)
+	router.POST("account/sign", Sign)
+	router.POST("assets/new", NewAsset)
 	router.Run(":3000")
 }
