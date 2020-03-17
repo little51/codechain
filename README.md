@@ -106,6 +106,10 @@ curl  -H "Content-Type: application/json" -d '{"publickey":"61E21AF00E674610DDC6
 {"error":"","info":"{\n  \"jsonrpc\": \"2.0\",\n  \"id\": -1,\n  \"result\": {\n    \"check_tx\": {\n      \"code\": 0,\n      \"data\": null,\n      \"log\": \"\",\n      \"info\": \"\",\n      \"gasWanted\": \"1\",\n      \"gasUsed\": \"0\",\n      \"events\": [],\n      \"codespace\": \"\"\n    },\n    \"deliver_tx\": {\n      \"code\": 0,\n      \"data\": null,\n      \"log\": \"\",\n      \"info\": \"\",\n      \"gasWanted\": \"0\",\n      \"gasUsed\": \"0\",\n      \"events\": [],\n      \"codespace\": \"\"\n    },\n    \"hash\": \"917E8691662385EA143F65DEE660A99D3DE04D08B5C1CADC99695ADBE04C5A05\",\n    \"height\": \"10\"\n  }\n}","result":true}
 ```
 
+### 数据库查询
+
+​	资产会保存到Mongodb中，通过Mongodb客户端可以查询chain数据库的assets集合。
+
 ## 路线图
 
 | 序号 | 类别  | 任务                                         | 完成情况 |
