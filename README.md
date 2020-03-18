@@ -12,7 +12,15 @@
 sudo apt-get install mongodb
 ```
 
-### 编译
+### 二进制文件安装
+
+codechain采用go语言开发，所以无依赖库，直接下载可执行文件即可运行，预览功能，安装脚本见
+
+https://github.com/little51/codechain/blob/master/release/v0.0.1/codechain_v0.0.1_linux_amd64.sh
+
+### 程序编译
+
+如果已经配置好go开发环境，可以编译程序源码。
 
 ```shell
 export GO111MODULE=on
@@ -39,7 +47,7 @@ tendermint init
 
 core程序会在26658端口监听tendermint进程发过来的交易。
 
-#### 运行NODE
+#### 运行单节点
 
 ​	再开一个命令行，执行：
 
@@ -118,7 +126,7 @@ curl  -H "Content-Type: application/json" -d '{"publickey":"61E21AF00E674610DDC6
 | :--: | ----- | -------------------------------------------- | -------- |
 |  1   | 基础  | 开发环境                                     | 完成     |
 |  2   |       | 运行环境                                     | 完成     |
-|  3   |       | CURL一键自动安装应用                         |          |
+|  3   |       | 一键自动安装应用                             | 完成     |
 |  4   | 资产  | 基本key-value(mongledb)                      | 完成     |
 |  5   |       | 账户account与签名                            | 完成     |
 |  6   |       | 可分隔资产                                   |          |
