@@ -15,6 +15,8 @@ sudo apt-get install mongodb
 ### 编译
 
 ```shell
+export GO111MODULE=on
+export GOPROXY=https://goproxy.io
 cd core
 go build
 ```
@@ -118,7 +120,7 @@ curl  -H "Content-Type: application/json" -d '{"publickey":"61E21AF00E674610DDC6
 |  2   |       | 运行环境                                     | 完成     |
 |  3   |       | CURL一键自动安装应用                         |          |
 |  4   | 资产  | 基本key-value(mongledb)                      | 完成     |
-|  5   |       | 账户account与签名                            | 开发中   |
+|  5   |       | 账户account与签名                            | 完成     |
 |  6   |       | 可分隔资产                                   |          |
 |  7   | API   | API规划                                      | 完成     |
 |  8   | WEBUI | 块浏览器                                     | 开发中   |
