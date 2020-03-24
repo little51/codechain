@@ -1,6 +1,10 @@
 # codechain
 
-​	codechain基于 Tendermint共识机制的代码链，采用go语言实现，并且依赖于Tendermint环境，建议在ubuntu16.04下开发，首先 [建立开发环境](https://github.com/little51/codechain/blob/master/getting-start.md) ，为了验证Tendermint的四个节点的运行情况，可以参考 [运行环境组网](https://github.com/little51/codechain/blob/master/making-testnet.md) 。
+​	codechain基于 Tendermint共识机制的代码链，采用go语言实现，并且依赖于Tendermint环境，建议在ubuntu16.04下开发，
+
+- ​	为了便于后续的开发，首先建立起golang、tendermint代码库、vscode的开发环境，参考：  [建立开发环境](https://github.com/little51/codechain/blob/master/getting-start.md)  。
+- ​	为了验证Tendermint的四个节点的运行情况，可以参考 [运行环境组网](https://github.com/little51/codechain/blob/master/making-testnet.md) 。
+- ​	为了验证Tendermint更多的节点加入，可以参拷 [Seed模式组网](https://github.com/little51/codechain/blob/master/making-seeds.md) 。
 
 ## Codechain核心
 
@@ -134,7 +138,7 @@ curl  -H "Content-Type: application/json" -d '{"publickey":"61E21AF00E674610DDC6
 |  8   | WEBUI | 块浏览器                                     | 开发中   |
 |  9   |       | 资产管理                                     |          |
 |  10  |       | 账户管理                                     |          |
-|  11  | 网络  | 协调节点                                     |          |
+|  11  | 网络  | 协调节点                                     | 完成     |
 |  12  |       | 节点管理（增减节点）                         |          |
 |  13  | 应用  | 生态系统（代码仓库、分布式应用、资产、价值） | 规划中   |
 
