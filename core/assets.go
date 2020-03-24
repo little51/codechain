@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"fmt"
 
 	abcitypes "github.com/tendermint/tendermint/abci/types"
@@ -12,7 +13,8 @@ import (
 
 // AssetsApplication mongodb connection.
 type AssetsApplication struct {
-	db *mongo.Client
+	db         *mongo.Client
+	validators []abcitypes.ValidatorUpdate
 }
 
 var _ abcitypes.Application = (*AssetsApplication)(nil)
@@ -102,6 +104,7 @@ func (app *AssetsApplication) Query(reqQuery abcitypes.RequestQuery) (resQuery a
 
 // InitChain drop collection .
 func (app *AssetsApplication) InitChain(req abcitypes.RequestInitChain) abcitypes.ResponseInitChain {
+	app.validators = req.Validators
 	collection := app.db.Database("chain").Collection("assets")
 	collection.Drop(context.TODO())
 	return abcitypes.ResponseInitChain{}
@@ -113,6 +116,28 @@ func (app *AssetsApplication) BeginBlock(req abcitypes.RequestBeginBlock) abcity
 }
 
 // EndBlock interface.
-func (AssetsApplication) EndBlock(req abcitypes.RequestEndBlock) abcitypes.ResponseEndBlock {
-	return abcitypes.ResponseEndBlock{}
+func (app *AssetsApplication) EndBlock(req abcitypes.RequestEndBlock) abcitypes.ResponseEndBlock {
+	if len(app.validators) == 0 {
+		return abcitypes.ResponseEndBlock{}
+	}
+	fmt.Println(len(app.validators))
+	var v abcitypes.ValidatorUpdate
+	// test new validator's public key
+	v.Power = 10
+	v.PubKey.Type = "tendermint/PubKeyEd25519"
+	v.PubKey.Data, _ = base64.StdEncoding.DecodeString("BsY96CRY2RK+vcVbMFpOiGQSLJARQTlDB00BbyZuwM0=")
+	//
+	keyExists := false
+	for i := 0; i < len(app.validators); i++ {
+		if bytes.Compare(app.validators[i].PubKey.Data, v.PubKey.Data) == 0 {
+			keyExists = true
+			break
+		}
+	}
+	if keyExists {
+		return abcitypes.ResponseEndBlock{}
+	} else {
+		app.validators = append(app.validators, v)
+		return abcitypes.ResponseEndBlock{ValidatorUpdates: app.validators}
+	}
 }
