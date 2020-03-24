@@ -25,7 +25,11 @@ func NewAssetsApplication(db *mongo.Client) *AssetsApplication {
 }
 
 // Info interface.
-func (AssetsApplication) Info(req abcitypes.RequestInfo) abcitypes.ResponseInfo {
+func (app *AssetsApplication) Info(req abcitypes.RequestInfo) abcitypes.ResponseInfo {
+	/*return abcitypes.ResponseInfo{Data: "codechainv0.0.1",
+		Version:    version.ABCIVersion,
+		AppVersion: ProtocolVersion.Uint64(),
+	}*/
 	return abcitypes.ResponseInfo{}
 }
 
@@ -124,7 +128,7 @@ func (app *AssetsApplication) EndBlock(req abcitypes.RequestEndBlock) abcitypes.
 	var v abcitypes.ValidatorUpdate
 	// test new validator's public key
 	v.Power = 10
-	v.PubKey.Type = "tendermint/PubKeyEd25519"
+	v.PubKey.Type = "ed25519"
 	v.PubKey.Data, _ = base64.StdEncoding.DecodeString("BsY96CRY2RK+vcVbMFpOiGQSLJARQTlDB00BbyZuwM0=")
 	//
 	keyExists := false
@@ -136,8 +140,7 @@ func (app *AssetsApplication) EndBlock(req abcitypes.RequestEndBlock) abcitypes.
 	}
 	if keyExists {
 		return abcitypes.ResponseEndBlock{}
-	} else {
-		app.validators = append(app.validators, v)
-		return abcitypes.ResponseEndBlock{ValidatorUpdates: app.validators}
 	}
+	app.validators = append(app.validators, v)
+	return abcitypes.ResponseEndBlock{ValidatorUpdates: app.validators}
 }
