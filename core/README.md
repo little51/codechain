@@ -1,5 +1,8 @@
-codechain core
+# codechain core
 
-assets : 资产管理
+core.go : 实现abci接口
 
-main : 程序入口
+- to-do 完整实现dynamic add validator
+- to-do info增加返回当前链状态
+
+main.go : 程序入口，在26658端口监听，收到请求委托给CoreApplication
