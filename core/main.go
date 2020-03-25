@@ -37,7 +37,7 @@ func main() {
 	// connect to mongodb,disconnect when app shutdown
 	db = connectDb()
 	defer db.Disconnect(context.TODO())
-	app = NewAssetsApplication(db)
+	app = NewCoreApplication(db)
 	flag.Parse()
 	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
 	server := abciserver.NewSocketServer("tcp://0.0.0.0:26658", app)
