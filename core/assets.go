@@ -121,7 +121,8 @@ func (app *AssetsApplication) BeginBlock(req abcitypes.RequestBeginBlock) abcity
 
 // EndBlock interface.
 func (app *AssetsApplication) EndBlock(req abcitypes.RequestEndBlock) abcitypes.ResponseEndBlock {
-	if len(app.validators) == 0 {
+	//fmt.Printf("%+v", req) test dynamic add validator
+	if len(app.validators) == 0 || req.Height <= 21 {
 		return abcitypes.ResponseEndBlock{}
 	}
 	fmt.Println(len(app.validators))
