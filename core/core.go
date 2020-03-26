@@ -11,13 +11,42 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+type State struct {
+	Height  int32  `json:"height"`
+	AppHash string `json:"app_hash"`
+}
+
 // CoreApplication mongodb connection.
 type CoreApplication struct {
 	db         *mongo.Client
 	validators []abcitypes.ValidatorUpdate
+	state      State
 }
 
 var _ abcitypes.Application = (*CoreApplication)(nil)
+
+// LoadState .
+func LoadState(app *CoreApplication) State {
+	collection := app.db.Database("chain").Collection("State")
+	//test
+	//_state_w := bson.M{"key": "laststate", "value": bson.M{"app_hash": "132", "height": 3}}
+	//	collection.InsertOne(context.TODO(), _state_w)
+	_state := bson.M{}
+	filter := bson.M{"key": "laststate"}
+	err := collection.FindOne(context.TODO(), filter).Decode(&_state)
+	var state State
+	if err == nil {
+		if value, ok := _state["value"].(bson.M); ok {
+			if _appHash, ok := value["app_hash"].(string); ok {
+				state.AppHash = _appHash
+			}
+			if _height, ok := value["height"].(int32); ok {
+				state.Height = _height
+			}
+		}
+	}
+	return state
+}
 
 // NewCoreApplication mongodb connection come from main.go .
 func NewCoreApplication(db *mongo.Client) *CoreApplication {
@@ -26,11 +55,14 @@ func NewCoreApplication(db *mongo.Client) *CoreApplication {
 
 // Info interface.
 func (app *CoreApplication) Info(req abcitypes.RequestInfo) abcitypes.ResponseInfo {
-	/*return abcitypes.ResponseInfo{Data: "codechainv0.0.1",
-		Version:    version.ABCIVersion,
-		AppVersion: ProtocolVersion.Uint64(),
-	}*/
+	app.state = LoadState(app)
 	return abcitypes.ResponseInfo{}
+	/*return abcitypes.ResponseInfo{Data: "codechain v0.0.1",
+		Version:          version.ABCIVersion,
+		AppVersion:       20200326,
+		LastBlockAppHash: app.state.AppHash,
+		LastBlockHeight:  app.state.Height,
+	}*/
 }
 
 // SetOption interface.
@@ -49,7 +81,6 @@ func (app *CoreApplication) isValid(tx []byte) (code uint32) {
 
 // DeliverTx check it and save to mongodb.
 func (app *CoreApplication) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDeliverTx {
-	fmt.Println(string(req.Tx))
 	code := app.isValid(req.Tx)
 	if code != 0 {
 		return abcitypes.ResponseDeliverTx{Code: code}
@@ -59,11 +90,10 @@ func (app *CoreApplication) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.
 	collection := app.db.Database("chain").Collection("Core")
 	Core := bson.M{"key": string(key), "value": string(value)}
 	fmt.Println(Core)
-	insertResult, err := collection.InsertOne(context.TODO(), Core)
+	_, err := collection.InsertOne(context.TODO(), Core)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Inserted a single document:", insertResult.InsertedID)
 	return abcitypes.ResponseDeliverTx{Code: 0}
 }
 
