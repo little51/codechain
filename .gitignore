@@ -17,3 +17,11 @@
 /pkg
 /example/kvstore/go.sum
 /core/core
+/browser/.DS_Store
+/browser/node_modules/
+/browser/dist/
+/browser/package-lock.json
+/browser/tests/**/coverage/
+/browser/.eslintignore
+/browser/.eslintrc.js
+/browser/.editorconfig
