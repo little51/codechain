@@ -7,13 +7,15 @@ import (
 	"fmt"
 
 	abcitypes "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/version"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type State struct {
-	Height  int32  `json:"height"`
-	AppHash string `json:"app_hash"`
+	Height  int64  `json:"height"`
+	AppHash []byte `json:"app_hash"`
 }
 
 // CoreApplication mongodb connection.
@@ -27,25 +29,37 @@ var _ abcitypes.Application = (*CoreApplication)(nil)
 
 // LoadState .
 func LoadState(app *CoreApplication) State {
-	collection := app.db.Database("chain").Collection("State")
-	//test
-	//_state_w := bson.M{"key": "laststate", "value": bson.M{"app_hash": "132", "height": 3}}
-	//	collection.InsertOne(context.TODO(), _state_w)
+	collection := app.db.Database("chain").Collection("state")
 	_state := bson.M{}
 	filter := bson.M{"key": "laststate"}
 	err := collection.FindOne(context.TODO(), filter).Decode(&_state)
 	var state State
 	if err == nil {
 		if value, ok := _state["value"].(bson.M); ok {
-			if _appHash, ok := value["app_hash"].(string); ok {
-				state.AppHash = _appHash
+			if _appHash, ok := value["app_hash"].(primitive.Binary); ok {
+				state.AppHash = _appHash.Data
 			}
-			if _height, ok := value["height"].(int32); ok {
+			if _height, ok := value["height"].(int64); ok {
 				state.Height = _height
 			}
 		}
 	}
 	return state
+}
+
+// SaveState .
+func SaveState(app *CoreApplication) {
+	_stateNew := bson.M{"key": "laststate", "value": bson.M{"app_hash": app.state.AppHash, "height": app.state.Height}}
+	_stateOld := bson.M{}
+	collection := app.db.Database("chain").Collection("state")
+	filter := bson.M{"key": "laststate"}
+	err := collection.FindOne(context.TODO(), filter).Decode(&_stateOld)
+	if err == nil {
+		collection.UpdateOne(context.TODO(), _stateOld, bson.M{"$set": _stateNew})
+	} else {
+		collection.InsertOne(context.TODO(), _stateNew)
+	}
+	return
 }
 
 // NewCoreApplication mongodb connection come from main.go .
@@ -56,13 +70,15 @@ func NewCoreApplication(db *mongo.Client) *CoreApplication {
 // Info interface.
 func (app *CoreApplication) Info(req abcitypes.RequestInfo) abcitypes.ResponseInfo {
 	app.state = LoadState(app)
-	return abcitypes.ResponseInfo{}
-	/*return abcitypes.ResponseInfo{Data: "codechain v0.0.1",
+	if app.state.Height == 0 {
+		return abcitypes.ResponseInfo{}
+	}
+	return abcitypes.ResponseInfo{Data: "codechain v0.0.1",
 		Version:          version.ABCIVersion,
 		AppVersion:       20200326,
 		LastBlockAppHash: app.state.AppHash,
 		LastBlockHeight:  app.state.Height,
-	}*/
+	}
 }
 
 // SetOption interface.
@@ -87,9 +103,8 @@ func (app *CoreApplication) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.
 	}
 	parts := bytes.Split(req.Tx, []byte("="))
 	key, value := string(parts[0]), string(parts[1])
-	collection := app.db.Database("chain").Collection("Core")
+	collection := app.db.Database("chain").Collection("assets")
 	Core := bson.M{"key": string(key), "value": string(value)}
-	fmt.Println(Core)
 	_, err := collection.InsertOne(context.TODO(), Core)
 	if err != nil {
 		panic(err)
@@ -113,7 +128,7 @@ func (app *CoreApplication) Query(reqQuery abcitypes.RequestQuery) (resQuery abc
 	parts := bytes.Split(reqQuery.Data, []byte("="))
 	value := string(parts[1])
 	filter := bson.M{"key": string(value)}
-	collection := app.db.Database("chain").Collection("Core")
+	collection := app.db.Database("chain").Collection("assets")
 	Core := bson.M{}
 	err := collection.FindOne(context.TODO(), filter).Decode(&Core)
 	if err != nil {
@@ -139,23 +154,24 @@ func (app *CoreApplication) Query(reqQuery abcitypes.RequestQuery) (resQuery abc
 // InitChain drop collection .
 func (app *CoreApplication) InitChain(req abcitypes.RequestInitChain) abcitypes.ResponseInitChain {
 	app.validators = req.Validators
-	collection := app.db.Database("chain").Collection("Core")
+	collection := app.db.Database("chain").Collection("assets")
 	collection.Drop(context.TODO())
 	return abcitypes.ResponseInitChain{}
 }
 
 // BeginBlock interface.
 func (app *CoreApplication) BeginBlock(req abcitypes.RequestBeginBlock) abcitypes.ResponseBeginBlock {
+	app.state.AppHash = req.Hash
+	app.state.Height = req.Header.Height
+	SaveState(app)
 	return abcitypes.ResponseBeginBlock{}
 }
 
 // EndBlock interface.
 func (app *CoreApplication) EndBlock(req abcitypes.RequestEndBlock) abcitypes.ResponseEndBlock {
-	//fmt.Printf("%+v", req) test dynamic add validator
 	if len(app.validators) == 0 || req.Height <= 21 {
 		return abcitypes.ResponseEndBlock{}
 	}
-	fmt.Println(len(app.validators))
 	var v abcitypes.ValidatorUpdate
 	// test new validator's public key
 	v.Power = 10
