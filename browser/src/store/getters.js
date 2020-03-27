@@ -4,7 +4,7 @@ export const token = state => state.user.token
 export const avatar = state => state.user.avatar
 export const name = state => state.user.name
 
-// blockchain 
+// blockchain
 export const blockchain = state => state.blockchain
 export const blocks = state => state.blockchain.blocks
 export const config = state => state.config
@@ -26,11 +26,14 @@ export const latestBlock = (state, getters) => {
       height: 0,
       time: "",
       last_commit_hash: "",
-      num_txs: 0,   // txs in this block
-      total_txs: 0, // total txs in blockchain at the moment of this block
+      num_txs: 0, // txs in this block
+      total_txs: 0 // total txs in blockchain at the moment of this block
     }
   }
 }
 
 export const totalBlocks = (state, getters) => parseInt(getters.latestBlock.height)
 export const totalTxs = (state, getters) => parseInt(getters.latestBlock.total_txs)
+
+// Abount account
+export const account = state => state.account.tem_new_account

@@ -56,7 +56,8 @@ func NewAsset(c *gin.Context) {
 		return
 	}
 	//send message to chain core
-	url := "http://localhost:26657/broadcast_tx_commit?tx=\"" + _asset.Key + "=" + _asset.Value + "\""
+	//url := "http://localhost:26657/broadcast_tx_commit?tx=\"" + _asset.Key + "=" + _asset.Value + "\""
+	url := "http://172.16.62.48:26659/broadcast_tx_commit?tx=\"" + _asset.Key + "=" + _asset.Value + "\""
 	resp, err := http.Get(url)
 	if err != nil {
 		c.JSON(200, gin.H{

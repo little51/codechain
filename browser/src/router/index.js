@@ -101,6 +101,46 @@ export const constantRoutes = [
       }
     ]
   },
+  {
+    path: '/Account',
+    component: Layout,
+    name: 'Account',
+    meta: { title: 'Account', icon: 'user' },
+    children: [
+      {
+        path: 'new',
+        name: 'new',
+        component: () => import('@/views/account/index'),
+        meta: { title: 'Add Account', icon: 'link' }
+      },
+      {
+        path: 'lists',
+        name: 'lists',
+        component: () => import('@/views/account/lists'),
+        meta: { title: 'Add Lists', icon: 'link' }
+      }
+    ]
+  },
+  {
+    path: '/Assets',
+    component: Layout,
+    name: 'Assets',
+    meta: { title: 'Assets', icon: 'nested' },
+    children: [
+      {
+        path: 'new',
+        name: 'new',
+        component: () => import('@/views/assets/index'),
+        meta: { title: 'Add Asset', icon: 'link' }
+      },
+      {
+        path: 'query/:query',
+        name: 'query',
+        component: () => import('@/views/assets/query'),
+        meta: { title: 'Query Asset', icon: 'link' }
+      }
+    ]
+  },
   // {
   //   path: '/form',
   //   component: Layout,

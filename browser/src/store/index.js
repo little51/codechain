@@ -10,6 +10,7 @@ import settings from './modules/settings'
 import user from './modules/user'
 import blockchain from './modules/blockchain'
 import config from './modules/config'
+import account from './modules/account'
 
 Vue.use(Vuex)
 
@@ -19,9 +20,10 @@ const store = new Vuex.Store({
     settings,
     user,
     blockchain,
-    config
+    config,
+    account
   },
-  getters,
+  getters
   // actions
 })
 
