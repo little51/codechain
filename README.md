@@ -124,6 +124,10 @@ curl  -H "Content-Type: application/json" -d '{"publickey":"61E21AF00E674610DDC6
 
 ​	资产会保存到Mongodb中，通过Mongodb客户端可以查询chain数据库的assets集合。
 
+## 链浏览器
+
+参见 [链浏览器](https://github.com/little51/codechain/blob/master/browser/README.md) 的说明。
+
 ## 路线图
 
 | 序号 | 类别  | 任务                                         | 完成情况 |
