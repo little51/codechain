@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"fmt"
 
 	abcitypes "github.com/tendermint/tendermint/abci/types"
@@ -44,6 +43,7 @@ func LoadState(app *CoreApplication) State {
 			}
 		}
 	}
+	fmt.Println("load state from mongodb : ", state)
 	return state
 }
 
@@ -59,6 +59,7 @@ func SaveState(app *CoreApplication) {
 	} else {
 		collection.InsertOne(context.TODO(), _stateNew)
 	}
+	fmt.Println("save state to mongodb : ", _stateNew)
 	return
 }
 
@@ -71,11 +72,14 @@ func NewCoreApplication(db *mongo.Client) *CoreApplication {
 func (app *CoreApplication) Info(req abcitypes.RequestInfo) abcitypes.ResponseInfo {
 	app.state = LoadState(app)
 	if app.state.Height == 0 {
-		return abcitypes.ResponseInfo{}
+		return abcitypes.ResponseInfo{Data: "codechain v0.0.1",
+			Version:    version.ABCIVersion,
+			AppVersion: 20200330,
+		}
 	}
 	return abcitypes.ResponseInfo{Data: "codechain v0.0.1",
 		Version:          version.ABCIVersion,
-		AppVersion:       20200326,
+		AppVersion:       20200330,
 		LastBlockAppHash: app.state.AppHash,
 		LastBlockHeight:  app.state.Height,
 	}
@@ -103,11 +107,16 @@ func (app *CoreApplication) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.
 	}
 	parts := bytes.Split(req.Tx, []byte("="))
 	key, value := string(parts[0]), string(parts[1])
+
+	filter := bson.M{"key": string(key)}
+	assetOld := bson.M{}
+	assetNew := bson.M{"key": string(key), "value": string(value)}
 	collection := app.db.Database("chain").Collection("assets")
-	Core := bson.M{"key": string(key), "value": string(value)}
-	_, err := collection.InsertOne(context.TODO(), Core)
-	if err != nil {
-		panic(err)
+	err := collection.FindOne(context.TODO(), filter).Decode(&assetOld)
+	if err == nil {
+		collection.UpdateOne(context.TODO(), assetOld, bson.M{"$set": assetNew})
+	} else {
+		collection.InsertOne(context.TODO(), assetNew)
 	}
 	return abcitypes.ResponseDeliverTx{Code: 0}
 }
@@ -120,7 +129,13 @@ func (app *CoreApplication) CheckTx(req abcitypes.RequestCheckTx) abcitypes.Resp
 
 // Commit interface .
 func (app *CoreApplication) Commit() abcitypes.ResponseCommit {
-	return abcitypes.ResponseCommit{Data: []byte{}}
+	//appHash := make([]byte, 32)
+	//binary.PutVarint(appHash, app.state.Height)
+	//make empty apphash avoid create empty block
+	app.state.AppHash = []byte{} //appHash
+	app.state.Height++
+	SaveState(app)
+	return abcitypes.ResponseCommit{Data: app.state.AppHash}
 }
 
 // Query  query document from mongledb.
@@ -161,33 +176,33 @@ func (app *CoreApplication) InitChain(req abcitypes.RequestInitChain) abcitypes.
 
 // BeginBlock interface.
 func (app *CoreApplication) BeginBlock(req abcitypes.RequestBeginBlock) abcitypes.ResponseBeginBlock {
-	app.state.AppHash = req.Hash
-	app.state.Height = req.Header.Height
-	SaveState(app)
 	return abcitypes.ResponseBeginBlock{}
 }
 
 // EndBlock interface.
 func (app *CoreApplication) EndBlock(req abcitypes.RequestEndBlock) abcitypes.ResponseEndBlock {
-	if len(app.validators) == 0 || req.Height <= 21 {
-		return abcitypes.ResponseEndBlock{}
-	}
-	var v abcitypes.ValidatorUpdate
-	// test new validator's public key
-	v.Power = 10
-	v.PubKey.Type = "ed25519"
-	v.PubKey.Data, _ = base64.StdEncoding.DecodeString("BsY96CRY2RK+vcVbMFpOiGQSLJARQTlDB00BbyZuwM0=")
-	//
-	keyExists := false
-	for i := 0; i < len(app.validators); i++ {
-		if bytes.Compare(app.validators[i].PubKey.Data, v.PubKey.Data) == 0 {
-			keyExists = true
-			break
+	return abcitypes.ResponseEndBlock{}
+	/*
+		dynamic add validator
+		if len(app.validators) == 0 || req.Height <= 21 {
+			return abcitypes.ResponseEndBlock{}
 		}
-	}
-	if keyExists {
-		return abcitypes.ResponseEndBlock{}
-	}
-	app.validators = append(app.validators, v)
-	return abcitypes.ResponseEndBlock{ValidatorUpdates: app.validators}
+		var v abcitypes.ValidatorUpdate
+		// test new validator's public key
+		v.Power = 10
+		v.PubKey.Type = "ed25519"
+		v.PubKey.Data, _ = base64.StdEncoding.DecodeString("BsY96CRY2RK+vcVbMFpOiGQSLJARQTlDB00BbyZuwM0=")
+		//
+		keyExists := false
+		for i := 0; i < len(app.validators); i++ {
+			if bytes.Compare(app.validators[i].PubKey.Data, v.PubKey.Data) == 0 {
+				keyExists = true
+				break
+			}
+		}
+		if keyExists {
+			return abcitypes.ResponseEndBlock{}
+		}
+		app.validators = append(app.validators, v)
+		return abcitypes.ResponseEndBlock{ValidatorUpdates: app.validators}*/
 }
