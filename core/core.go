@@ -5,6 +5,8 @@ import (
 	"context"
 	"fmt"
 
+	"encoding/json"
+
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/version"
 	"go.mongodb.org/mongo-driver/bson"
@@ -107,7 +109,7 @@ func (app *CoreApplication) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.
 	}
 	parts := bytes.Split(req.Tx, []byte("="))
 	key, value := string(parts[0]), string(parts[1])
-
+	//find tx,if exists then update else insert
 	filter := bson.M{"key": string(key)}
 	assetOld := bson.M{}
 	assetNew := bson.M{"key": string(key), "value": string(value)}
@@ -118,7 +120,14 @@ func (app *CoreApplication) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.
 	} else {
 		collection.InsertOne(context.TODO(), assetNew)
 	}
-	return abcitypes.ResponseDeliverTx{Code: 0}
+	var _code uint32
+	//tokens parse
+	var tokenTx TokenTx
+	errParse := json.Unmarshal([]byte(string(value)), &tokenTx)
+	if errParse == nil {
+		_code = DoTokenTx(app, tokenTx)
+	}
+	return abcitypes.ResponseDeliverTx{Code: _code}
 }
 
 // CheckTx check tx format .
