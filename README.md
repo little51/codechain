@@ -3,8 +3,9 @@
 ​	codechain基于 Tendermint共识机制的代码链，采用go语言实现，并且依赖于Tendermint环境，建议在ubuntu16.04下开发，
 
 - ​	为了便于后续的开发，首先建立起git、golang、tendermint代码库、vscode的开发环境，参考  [建立开发环境](https://github.com/little51/codechain/blob/master/getting-start.md)  。
-- ​	为了验证Tendermint的四个节点的运行情况，参考 [运行环境组网](https://github.com/little51/codechain/blob/master/making-testnet.md) 。
-- ​	为了验证Tendermint更多的节点加入，参考 [Seed模式组网](https://github.com/little51/codechain/blob/master/making-seeds.md) 。
+- 为了验证Tendermint的四个节点的运行情况，参考 [运行环境组网](https://github.com/little51/codechain/blob/master/making-testnet.md) 。
+- 为了验证Tendermint更多的节点加入，参考 [Seed模式组网](https://github.com/little51/codechain/blob/master/making-seeds.md) 。
+- Tendermint一些难点，可参考 [FAQ](https://github.com/little51/codechain/blob/master/faq.md) 。
 
 ## Codechain核心
 
@@ -137,12 +138,12 @@ curl  -H "Content-Type: application/json" -d '{"publickey":"61E21AF00E674610DDC6
 |  3   |       | 一键自动安装应用                             | 完成     |
 |  4   | 资产  | 基本key-value(mongledb)                      | 完成     |
 |  5   |       | 账户account与签名                            | 完成     |
-|  6   |       | 可分隔资产                                   |          |
+|  6   |       | 可分隔资产                                   | 开发中   |
 |  7   | API   | API规划                                      | 完成     |
 |  8   | WEBUI | 块浏览器                                     | 开发中   |
-|  9   |       | 资产管理                                     |          |
-|  10  |       | 账户管理                                     |          |
+|  9   |       | 资产管理                                     | 开发中   |
+|  10  |       | 账户管理                                     | 完成     |
 |  11  | 网络  | 协调节点                                     | 完成     |
 |  12  |       | 节点管理（增减节点）                         | 开发中   |
-|  13  | 应用  | 生态系统（代码仓库、分布式应用、资产、价值） | 规划中   |
+|  13  | 应用  | 生态系统（代码仓库、分布式应用、资产、价值） | 规划完成 |
 
