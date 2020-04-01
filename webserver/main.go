@@ -17,6 +17,7 @@ func main() {
 	router.POST("account/new", NewAccount)
 	router.POST("account/sign", Sign)
 	router.POST("assets/new", NewAsset)
+	router.POST("assets/query", QueryAsset)
 	router.Run(":3000")
 }
 

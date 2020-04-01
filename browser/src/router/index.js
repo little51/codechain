@@ -112,12 +112,6 @@ export const constantRoutes = [
         name: 'new',
         component: () => import('@/views/account/index'),
         meta: { title: 'Add Account', icon: 'link' }
-      },
-      {
-        path: 'lists',
-        name: 'lists',
-        component: () => import('@/views/account/lists'),
-        meta: { title: 'Add Lists', icon: 'link' }
       }
     ]
   },

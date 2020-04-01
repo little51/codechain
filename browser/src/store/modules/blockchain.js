@@ -2,7 +2,8 @@ import axios from "axios"
 import { RpcClient } from "tendermint"
 
 const state = {
-  rpc: "http://172.16.62.48:26659",
+  // rpc: "http://172.16.62.48:26659",
+  rpc: 'http://localhost:26657',
   status: {
     listen_addr: "",
     sync_info: {
@@ -23,7 +24,8 @@ const state = {
   roundStep: ""
 }
 
-const client = RpcClient("ws://172.16.62.48:26659")
+// const client = RpcClient("ws://172.16.62.48:26659")
+const client = RpcClient("ws://localhost:26657")
 
 const actions = {
   subNewBlock({ commit, dispatch }) {
