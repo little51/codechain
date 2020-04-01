@@ -22,6 +22,4 @@
 /browser/dist/
 /browser/package-lock.json
 /browser/tests/**/coverage/
-/browser/.eslintignore
-/browser/.eslintrc.js
 /browser/.editorconfig
