@@ -68,9 +68,16 @@ func NewAsset(c *gin.Context) {
 	var baseInitData = _asset.Key + "=" + _asset.Value
 	var baseInput = []byte(baseInitData)
 	var encodingString = base64.StdEncoding.EncodeToString(baseInput)
-	var post = "{\"method\":\"broadcast_tx_commit\",\"jsonrpc\":\"2.0\",\"params\":{\"tx\":" + encodingString + "},\"id\":\"\"}"
+	var post = "{\"method\":\"broadcast_tx_commit\",\"jsonrpc\":\"2.0\",\"params\":{\"tx\":\"" + encodingString + "\"},\"id\":\"\"}"
 	var jsonStr = []byte(post)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
+	if err != nil {
+		c.JSON(200, gin.H{
+			"result": false,
+			"info":   "",
+			"error":  err.Error(),
+		})
+	}
 	req.Header.Set("Content-Type", "application/json;charset=UTF-8")
 	client := &http.Client{}
 	resp, err := client.Do(req)
