@@ -9,7 +9,7 @@
       </div>
     </div>
     <div>
-      <el-form ref="form" label-width="80px">
+      <el-form ref="form" label-width="100px">
         <el-form-item label="privatekey">
           <el-input v-model="form_privatekey" :disabled="signSuccessful" />
         </el-form-item>

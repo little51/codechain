@@ -61,9 +61,26 @@ func NewAsset(c *gin.Context) {
 		return
 	}
 	//send message to chain core
-	url := "http://localhost:26657/broadcast_tx_commit?tx=\"" + _asset.Key + "=" + _asset.Value + "\""
-	//url := "http://172.16.62.48:26659/broadcast_tx_commit?tx=\"" + _asset.Key + "=" + _asset.Value + "\""
-	resp, err := http.Get(url)
+	// url := "http://localhost:26657/broadcast_tx_commit?tx=\"" + _asset.Key + "=" + _asset.Value + "\""
+	url := "http://localhost:26657"
+  baseInitData := _asset.Key + "=" + _asset.Value
+  baseInput := []byte(baseInitData)
+  encodingString := base64.StdEncoding.EncodeToString(baseInput)
+
+  post := `{
+    "method":"broadcast_tx_commit",
+    "jsonrpc":"2.0",
+    "params":{
+      "tx":` + encodingString +
+    `},
+    "id":""
+  }`
+  var jsonStr = []byte(post)
+  req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
+  req.Header.Set("Content-Type", "application/json;charset=UTF-8")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+
 	if err != nil {
 		c.JSON(200, gin.H{
 			"result": false,
