@@ -3,13 +3,11 @@ package main
 import (
 	"bytes"
 	"encoding/base64"
-	"encoding/hex"
-	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/tendermint/tendermint/crypto/ed25519"
 )
 
 // AssetBody struct
@@ -38,34 +36,16 @@ func NewAsset(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	//parse asset to : key = value
-	_msg := jsonAssetBody.Msg
-	var _asset Asset
-	err := json.Unmarshal([]byte(_msg), &_asset)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	//restore public key
-	_publickey := jsonAssetBody.PublicKey
-	_sign, _ := hex.DecodeString(jsonAssetBody.Sign)
-	var publicKey ed25519.PubKeyEd25519
-	temp, _ := hex.DecodeString(_publickey)
-	copy(publicKey[:], temp)
-	//verify sign
-	b := publicKey.VerifyBytes([]byte(_msg), []byte(_sign))
-	if !b {
-		c.JSON(200, gin.H{
-			"result": false,
-			"info":   "",
-			"error":  "sign error",
-		})
-		return
-	}
 	//send message to chain core
 	// url := "http://localhost:26657/broadcast_tx_commit?tx=\"" + _asset.Key + "=" + _asset.Value + "\""
 	url := "http://localhost:26657"
-	var baseInitData = _asset.Key + "=" + _asset.Value
+
+	var baseInitData = "{" +
+		"\"publickey\":\"" + jsonAssetBody.PublicKey + "\"," +
+		"\"sign\":\"" + jsonAssetBody.Sign + "\"," +
+		"\"msg\":\"" + jsonAssetBody.Msg + "\"" +
+		"}"
+	fmt.Println(baseInitData)
 	var baseInput = []byte(baseInitData)
 	var encodingString = base64.StdEncoding.EncodeToString(baseInput)
 	var post = "{\"method\":\"broadcast_tx_commit\",\"jsonrpc\":\"2.0\",\"params\":{\"tx\":\"" + encodingString + "\"},\"id\":\"\"}"

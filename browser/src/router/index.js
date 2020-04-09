@@ -128,7 +128,7 @@ export const constantRoutes = [
         meta: { title: 'Add Asset', icon: 'link' }
       },
       {
-        path: 'query/:query',
+        path: 'query',
         name: 'query',
         component: () => import('@/views/assets/query'),
         meta: { title: 'Query Asset', icon: 'link' }

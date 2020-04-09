@@ -5,9 +5,12 @@ import (
 	"context"
 	"fmt"
 
+	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 
 	abcitypes "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/version"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -17,6 +20,18 @@ import (
 type State struct {
 	Height  int64  `json:"height"`
 	AppHash []byte `json:"app_hash"`
+}
+
+// tx struct
+type TxStruct struct {
+	PublicKey string `json:"publickey"`
+	Sign      string `json:"sign"`
+	Msg       string `json:"msg"`
+}
+
+type MsgStruct struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 // CoreApplication mongodb connection.
@@ -101,6 +116,55 @@ func (app *CoreApplication) isValid(tx []byte) (code uint32) {
 	return 0
 }
 
+// isTxJson
+func (app *CoreApplication) isTxJson(jsonByte []byte) (jsonObj TxStruct, err error) {
+	var _txData TxStruct
+	if err := json.Unmarshal(jsonByte, &_txData); err != nil {
+		return _txData, err
+	} else {
+		return _txData, nil
+	}
+}
+
+// Verify sign
+func (app *CoreApplication) signVerify(req []byte) (string, bool) {
+	var _msg string
+	// restore public key
+	reqData, err := app.isTxJson(req)
+	if err != nil {
+		return _msg, false
+	}
+	_publickey := reqData.PublicKey
+	_sign, _ := hex.DecodeString(reqData.Sign)
+	_msg = reqData.Msg
+	var publicKey ed25519.PubKeyEd25519
+	temp, _ := hex.DecodeString(_publickey)
+	copy(publicKey[:], temp)
+	//verify sign
+	fmt.Println(_msg)
+	b := publicKey.VerifyBytes([]byte(_msg), []byte(_sign))
+	if !b {
+		return _msg, false
+	}
+	return _msg, true
+}
+
+// decode base64 of mag
+func (app *CoreApplication) DecodeMsg(msg string) (msgJson MsgStruct, err error) {
+	var msgObj MsgStruct
+	decodeBytes, err := base64.StdEncoding.DecodeString(msg)
+	if err != nil {
+		fmt.Println("decodeString msg wrong")
+		return msgObj, err
+	}
+	if err := json.Unmarshal([]byte(decodeBytes), &msgObj); err != nil {
+		fmt.Println("msg string is not a right type")
+		return msgObj, err
+	} else {
+		return msgObj, nil
+	}
+}
+
 // DeliverTx check it and save to mongodb.
 func (app *CoreApplication) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDeliverTx {
 	code := app.isValid(req.Tx)
@@ -132,6 +196,11 @@ func (app *CoreApplication) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.
 
 // CheckTx check tx format .
 func (app *CoreApplication) CheckTx(req abcitypes.RequestCheckTx) abcitypes.ResponseCheckTx {
+	msgString, _ := app.signVerify(req.Tx)
+	msgJson, _ := app.DecodeMsg(msgString)
+	fmt.Println(msgJson.Key)
+	fmt.Println(msgJson.Value)
+
 	code := app.isValid(req.Tx)
 	return abcitypes.ResponseCheckTx{Code: code, GasWanted: 1}
 }

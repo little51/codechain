@@ -47,7 +47,7 @@
 
 <script>
 import axios from 'axios'
-
+import { Base64 } from 'js-base64'
 export default {
   data() {
     return {
@@ -83,6 +83,19 @@ export default {
       this.resetButton = false
     },
     /**
+     * 构造msg base64的字符串
+     */
+    getMsgString() {
+      let msgObj = {
+        key: this.form_msg_key,
+        value: this.form_msg_value
+      }
+      let msgString = JSON.stringify(msgObj)
+      let msgBase64String = Base64.encode(msgString)
+      console.log(msgBase64String)
+      return msgBase64String
+    },
+    /**
      *  资产登记
      */
     async onRegister() {
@@ -93,12 +106,11 @@ export default {
       let postData = {
         "publickey": `${this.form_publicKey}`,
         "sign": `${this.signResponse.sign}`,
-        "msg": `{\"key\": \"${this.form_msg_key}\",\"value\": \"${this.form_msg_value}\"}`
+        "msg": this.getMsgString()
       }
-      let json = await axios.post('http://localhost:3000//assets/new', postData)
+      let json = await axios.post('http://localhost:3000/assets/new', postData)
       let result = json.data
       this.registerResponse = result
-      console.log(this.registerResponse)
       this.register_data = this.getRegisterResponse()
 
       // 判断是否正确请求成功
@@ -106,6 +118,7 @@ export default {
         this.resetButton = true
         this.active = 2
       }
+      this.resetButton = true
       return Promise.resolve()
     },
     /**
@@ -118,12 +131,11 @@ export default {
       }
       let postData = {
         "privatekey": `${this.form_privatekey}`,
-        "msg": `{\"key\": \"${this.form_msg_key}\",\"value\": \"${this.form_msg_value}\"}`
+        "msg": this.getMsgString()
       }
       let json = await axios.post('http://localhost:3000/account/sign', postData)
       let result = json.data
       this.signResponse = result
-      console.log(this.signResponse)
       this.json_data = this.getSignResponse()
 
       // 判断是否正确请求成功
