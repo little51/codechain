@@ -102,7 +102,7 @@ export default {
   },
   watch: {
     form_msg_key_amount(newData, oldData) {
-      if (!parseInt(newData)) {
+      if (newData !== '' && !parseInt(newData)) {
         this.open("the information of Amount must be number")
       }
     },
