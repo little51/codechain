@@ -5,12 +5,9 @@ import (
 	"context"
 	"fmt"
 
-	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
 
 	abcitypes "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/version"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -20,18 +17,6 @@ import (
 type State struct {
 	Height  int64  `json:"height"`
 	AppHash []byte `json:"app_hash"`
-}
-
-// tx struct
-type TxStruct struct {
-	PublicKey string `json:"publickey"`
-	Sign      string `json:"sign"`
-	Msg       string `json:"msg"`
-}
-
-type MsgStruct struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
 }
 
 // CoreApplication mongodb connection.
@@ -107,87 +92,58 @@ func (CoreApplication) SetOption(req abcitypes.RequestSetOption) abcitypes.Respo
 	return abcitypes.ResponseSetOption{}
 }
 
-// isValid
-func (app *CoreApplication) isValid(tx []byte) (code uint32) {
-	parts := bytes.Split(tx, []byte("="))
-	if len(parts) != 2 {
-		return 1
-	}
-	return 0
-}
-
-// isTxJson
-func (app *CoreApplication) isTxJson(jsonByte []byte) (jsonObj TxStruct, err error) {
-	var _txData TxStruct
-	if err := json.Unmarshal(jsonByte, &_txData); err != nil {
-		return _txData, err
-	} else {
-		return _txData, nil
-	}
-}
-
-// Verify sign
-func (app *CoreApplication) signVerify(req []byte) (string, bool) {
-	var _msg string
-	// restore public key
-	reqData, err := app.isTxJson(req)
-	if err != nil {
-		return _msg, false
-	}
-	_publickey := reqData.PublicKey
-	_sign, _ := hex.DecodeString(reqData.Sign)
-	_msg = reqData.Msg
-	var publicKey ed25519.PubKeyEd25519
-	temp, _ := hex.DecodeString(_publickey)
-	copy(publicKey[:], temp)
-	//verify sign
-	fmt.Println(_msg)
-	b := publicKey.VerifyBytes([]byte(_msg), []byte(_sign))
-	if !b {
-		return _msg, false
-	}
-	return _msg, true
-}
-
-// decode base64 of mag
-func (app *CoreApplication) DecodeMsg(msg string) (msgJson MsgStruct, err error) {
-	var msgObj MsgStruct
-	decodeBytes, err := base64.StdEncoding.DecodeString(msg)
-	if err != nil {
-		fmt.Println("decodeString msg wrong")
-		return msgObj, err
-	}
-	if err := json.Unmarshal([]byte(decodeBytes), &msgObj); err != nil {
-		fmt.Println("msg string is not a right type")
-		return msgObj, err
-	} else {
-		return msgObj, nil
-	}
-}
-
 // DeliverTx check it and save to mongodb.
 func (app *CoreApplication) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDeliverTx {
-	code := app.isValid(req.Tx)
-	if code != 0 {
-		return abcitypes.ResponseDeliverTx{Code: code}
+	_msgString, ok := app.signVerify(req.Tx)
+	if !ok {
+		return abcitypes.ResponseDeliverTx{Code: 1}
 	}
-	parts := bytes.Split(req.Tx, []byte("="))
-	key, value := string(parts[0]), string(parts[1])
-	//find tx,if exists then update else insert
-	filter := bson.M{"key": string(key)}
-	assetOld := bson.M{}
-	assetNew := bson.M{"key": string(key), "value": string(value)}
-	collection := app.db.Database("chain").Collection("assets")
-	err := collection.FindOne(context.TODO(), filter).Decode(&assetOld)
-	if err == nil {
-		collection.UpdateOne(context.TODO(), assetOld, bson.M{"$set": assetNew})
+	_msgObj, err := app.DecodeMsg(_msgString)
+	if err != nil {
+		return abcitypes.ResponseDeliverTx{Code: 1, Log: "DecodeMsg is wrong"}
+	}
+	tokenObj, err := app.JudgeMsgValueType(string(_msgObj.Value))
+	if err != nil {
+		// save value string in mongodb
+		//find tx,if exists then update else insert
+		fmt.Println("ready to save string data to mongodb")
+		fmt.Println(_msgObj.Key)
+		fmt.Println(_msgObj.Value)
+		filter := bson.M{"key": string(_msgObj.Key)}
+		assetOld := bson.M{}
+		assetNew := bson.M{"key": string(_msgObj.Key), "value": string(_msgObj.Value)}
+		collection := app.db.Database("chain").Collection("assets")
+		err := collection.FindOne(context.TODO(), filter).Decode(&assetOld)
+		if err == nil {
+			collection.UpdateOne(context.TODO(), assetOld, bson.M{"$set": assetNew})
+		} else {
+			collection.InsertOne(context.TODO(), assetNew)
+		}
 	} else {
-		collection.InsertOne(context.TODO(), assetNew)
+		// save value json in mongodb
+		//find tx,if exists then update else insert
+		fmt.Println("ready to save json data to mongodb")
+		fmt.Println(_msgObj.Key)
+		fmt.Println(tokenObj)
+		filter := bson.M{"key": string(_msgObj.Key)}
+		assetOld := bson.M{}
+		valueObj := bson.M{"token": tokenObj.Token, "from": tokenObj.From, "to": tokenObj.To, "Amount": tokenObj.Amount}
+		assetNew := bson.M{
+			"key":   string(_msgObj.Key),
+			"value": valueObj,
+		}
+		collection := app.db.Database("chain").Collection("assets")
+		err := collection.FindOne(context.TODO(), filter).Decode(&assetOld)
+		if err == nil {
+			collection.UpdateOne(context.TODO(), assetOld, bson.M{"$set": assetNew})
+		} else {
+			collection.InsertOne(context.TODO(), assetNew)
+		}
 	}
 	var _code uint32
 	//tokens parse
 	var tokenTx TokenTx
-	errParse := json.Unmarshal([]byte(string(value)), &tokenTx)
+	errParse := json.Unmarshal([]byte(string(_msgObj.Value)), &tokenTx)
 	if errParse == nil {
 		_code = DoTokenTx(app, tokenTx)
 	}
@@ -196,13 +152,12 @@ func (app *CoreApplication) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.
 
 // CheckTx check tx format .
 func (app *CoreApplication) CheckTx(req abcitypes.RequestCheckTx) abcitypes.ResponseCheckTx {
-	msgString, _ := app.signVerify(req.Tx)
-	msgJson, _ := app.DecodeMsg(msgString)
-	fmt.Println(msgJson.Key)
-	fmt.Println(msgJson.Value)
+	_, ok := app.signVerify(req.Tx)
+	if !ok {
+		return abcitypes.ResponseCheckTx{Code: 1, GasWanted: 1}
+	}
+	return abcitypes.ResponseCheckTx{Code: 0, GasWanted: 1}
 
-	code := app.isValid(req.Tx)
-	return abcitypes.ResponseCheckTx{Code: code, GasWanted: 1}
 }
 
 // Commit interface .

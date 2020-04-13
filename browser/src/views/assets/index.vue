@@ -10,17 +10,46 @@
     </div>
     <div>
       <el-form ref="form" label-width="100px">
-        <el-form-item label="privatekey">
+        <el-form-item label="privatekey:">
           <el-input v-model="form_privatekey" :disabled="signSuccessful" />
         </el-form-item>
-        <el-form-item label="publicKey">
+        <el-form-item label="publicKey:">
           <el-input v-model="form_publicKey" :disabled="signSuccessful" />
         </el-form-item>
-        <el-form-item label="msg_key">
+        <el-form-item label="msg_key:">
           <el-input v-model="form_msg_key" :disabled="signSuccessful" />
         </el-form-item>
-        <el-form-item label="msg_value">
-          <el-input v-model="form_msg_value" :disabled="signSuccessful" />
+        <el-form-item label="msg_value:">
+          <el-switch
+            v-model="msgtype"
+            active-color="#13ce66"
+            inactive-color="ff4949"
+            active-value="json"
+            inactive-value="string"
+            active-text="JSON"
+            inactive-text="String"
+            :disabled="signSuccessful"
+          >
+          </el-switch>
+          <div v-if="msgtype==='string'">
+            <el-input  v-model="form_msg_value" :disabled="signSuccessful" />
+          </div>
+          <div v-else>
+            <el-form ref="msg_form" label-width="80px">
+              <el-form-item  label="Token:">
+                <el-input v-model="form_msg_value_token" :disabled="signSuccessful" style="margin-top:5px;margin-bottom:15px"/>
+              </el-form-item>
+              <el-form-item  label="From:">
+                <el-input v-model="form_msg_key_from" :disabled="signSuccessful" style="margin-top:5px;margin-bottom:15px"/>
+              </el-form-item>
+              <el-form-item  label="To:">
+                <el-input v-model="form_msg_key_to" :disabled="signSuccessful" style="margin-top:5px;margin-bottom:15px"/>
+              </el-form-item>
+              <el-form-item label="Amount:">
+                <el-input v-model="form_msg_key_amount" :disabled="signSuccessful" style="margin-top:5px;margin-bottom:15px"/>
+              </el-form-item>
+            </el-form>
+          </div>
         </el-form-item>
         <el-form-item v-show="!signSuccessful">
           <el-button type="primary" @click="onSubmit">Asset Register</el-button>
@@ -63,7 +92,25 @@ export default {
       signSuccessful: false,
       startSign: false,
       startRegister: false,
-      resetButton: false
+      resetButton: false,
+      msgtype: 'string',
+      form_msg_value_token: '',
+      form_msg_key_from: '',
+      form_msg_key_to: '',
+      form_msg_key_amount: ''
+    }
+  },
+  watch: {
+    msgtype(newData, oldData) {
+      if (newData === 'string' && oldData === 'json') {
+        this.form_msg_value_token = ''
+        this.form_msg_key_from = ''
+        this.form_msg_key_to = ''
+        this.form_msg_key_amount = ''
+      }
+      if (oldData === 'string' && newData === 'json') {
+        this.form_msg_value = ''
+      }
     }
   },
   methods: {
@@ -81,28 +128,47 @@ export default {
       this.startSign = false
       this.startRegister = false
       this.resetButton = false
+      this.msgtype = 'string'
+      this.form_msg_value_token = ''
+      this.form_msg_key_from = ''
+      this.form_msg_key_to = ''
+      this.form_msg_key_amount = ''
     },
     /**
      * 构造msg base64的字符串
      */
     getMsgString() {
-      let msgObj = {
-        key: this.form_msg_key,
-        value: this.form_msg_value
+      if (this.msgtype === 'string') {
+        let msgObj = {
+          key: this.form_msg_key,
+          value: this.form_msg_value
+        }
+        let msgString = JSON.stringify(msgObj)
+        let msgBase64String = Base64.encode(msgString)
+        return msgBase64String
+      } else {
+        let msgValueObj = {
+          token: this.form_msg_value_token,
+          from: this.form_msg_key_from,
+          to: this.form_msg_key_to,
+          amount: this.form_msg_key_amount
+        }
+        let msgValueString = JSON.stringify(msgValueObj)
+        let msgValueBase64String = Base64.encode(msgValueString)
+        let msgObj = {
+          key: this.form_msg_key,
+          value: msgValueBase64String
+        }
+        let msgString = JSON.stringify(msgObj)
+        let msgBase64String = Base64.encode(msgString)
+        return msgBase64String
       }
-      let msgString = JSON.stringify(msgObj)
-      let msgBase64String = Base64.encode(msgString)
-      console.log(msgBase64String)
-      return msgBase64String
     },
     /**
      *  资产登记
      */
     async onRegister() {
-      if (this.form_publicKey === '' || this.form_privatekey === '' || this.register_msg_key === '' || this.register_msg_value === '') {
-        this.open()
-        return Promise.resolve()
-      }
+      console.log("assets register")
       let postData = {
         "publickey": `${this.form_publicKey}`,
         "sign": `${this.signResponse.sign}`,
@@ -113,7 +179,7 @@ export default {
       this.registerResponse = result
       this.register_data = this.getRegisterResponse()
 
-      // 判断是否正确请求成功
+      // 鍒ゆ柇鏄惁姝ｇ‘璇锋眰鎴愬姛
       if (this.registerResponse.error === '') {
         this.resetButton = true
         this.active = 2
@@ -125,10 +191,7 @@ export default {
      * 资产签名
      */
     async onSign() {
-      if (this.form_privatekey === '' || this.form_msg_key === '' || this.form_msg_value === '' || this.form_publicKey === '') {
-        this.open()
-        return Promise.resolve()
-      }
+      console.log('assets sign')
       let postData = {
         "privatekey": `${this.form_privatekey}`,
         "msg": this.getMsgString()
@@ -149,12 +212,17 @@ export default {
      * 提交按钮
      */
     async onSubmit() {
+      if (!this.isInputRight()) {
+        this.open()
+        return
+      }
       const loading = this.$loading({
         lock: true,
         text: 'Loading',
         spinner: 'el-icon-loading',
         background: 'rgba(0, 0, 0, 0.7)'
       })
+
       setTimeout(async() => {
         this.startSign = true
         await this.onSign()
@@ -162,6 +230,25 @@ export default {
         await this.onRegister()
         loading.close()
       }, 1000)
+    },
+    /**
+     *  判断是否全部正确输入
+     */
+    isInputRight() {
+      if (this.form_privatekey === '' || this.form_msg_key === '' || this.form_publicKey === '') {
+        return false
+      } else {
+        if (this.msgtype === 'string') {
+          if (this.form_msg_value === '') {
+            return false
+          }
+        } else {
+          if (this.form_msg_value_token === '' || this.form_msg_key_from === '' || this.form_msg_key_to === '' || this.form_msg_key_amount === '') {
+            return false
+          }
+        }
+      }
+      return true
     },
     /**
      * 未正确输入的提示
