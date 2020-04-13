@@ -101,6 +101,11 @@ export default {
     }
   },
   watch: {
+    form_msg_key_amount(newData, oldData) {
+      if (!parseInt(newData)) {
+        this.open("the information of Amount must be number")
+      }
+    },
     msgtype(newData, oldData) {
       if (newData === 'string' && oldData === 'json') {
         this.form_msg_value_token = ''
@@ -253,7 +258,11 @@ export default {
     /**
      * 未正确输入的提示
      */
-    open() {
+    open(params) {
+      if (params) {
+        this.$message(params)
+        return
+      }
       this.$message('Please complete the information')
     },
     /**
