@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -57,17 +58,10 @@ func (app *CoreApplication) signVerify(req []byte) (string, bool) {
 // decode base64 of mag
 func (app *CoreApplication) DecodeMsg(msg string) (msgJson MsgStruct, err error) {
 	var msgObj MsgStruct
-	decodeBytes, err := base64.StdEncoding.DecodeString(msg)
-	if err != nil {
-		fmt.Println("decodeString msg wrong")
-		return msgObj, err
-	}
-	if err := json.Unmarshal([]byte(decodeBytes), &msgObj); err != nil {
-		fmt.Println("msg string is not a right JSON")
-		return msgObj, err
-	} else {
-		return msgObj, nil
-	}
+	parts := bytes.Split([]byte(msg), []byte(":"))
+	msgObj.Key = string(parts[0])
+	msgObj.Value = string(parts[1])
+	return msgObj, nil
 }
 
 // judgement the Type of Value in Msg

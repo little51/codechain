@@ -45,8 +45,10 @@ tendermint init
 链初始化只做一次，执行完成后，会在~/.tendermint目录下生成配置文件和数据文件。
 
 #### 运行应用
-
+进入codechain/core目录下执行下面操作：
 ```shell
+cd codechain/core
+go build
 ./core
 ```
 
@@ -65,7 +67,7 @@ tendermint会在26657端口监听。
 ### 测试
 
 ```shell
-curl -s 'localhost:26657/broadcast_tx_commit?tx="key1=value1"'
+curl -s 'localhost:26657/broadcast_tx_commit?tx="key1:value1"'
 curl -s 'localhost:26657/abci_query?data="key=key1"'
 ```
 
@@ -94,31 +96,128 @@ curl -X POST http://localhost:3000/account/new
 结果如下：
 
 ```json
-{"address":"89FC3A4172D79264D3ECA93DDF988D678EB2EC08","error":"","privateKey":"a53ea605169339e66891464a3de05c415e05814087fddb6fa41074044a43b8fa61e21af00e674610ddc63c3975a118c39639dea848df0baacdaf61f604f5d9a5","publicKey":"61E21AF00E674610DDC63C3975A118C39639DEA848DF0BAACDAF61F604F5D9A5"}
+{
+	"address":"155703E01281055E6C198040FB53FB203157B903",
+	"error":"",
+	"privateKey":"78fde71c52eb009b862a9041071f4cfe6721ea639d0a671dd1dd19292bd6799dbab233aa5573f4d06ec8376585357e7eee4026adabb6fed7ccb081df5ce9ddd3",
+	"publicKey":"BAB233AA5573F4D06EC8376585357E7EEE4026ADABB6FED7CCB081DF5CE9DDD3"}
 ```
 
 #### 资产签名
+由于msg中的value可以为一个string（字符串），也可以为格式为{ token: 'xxx', from: 'xxx', to: 'xxx', amount: 'xxx'}的json格式，所以我们分两种情况演示：
+
+<font>**① msg_value为string**</font>
 
 ```shell
-curl  -H "Content-Type: application/json" -d '{"privatekey":"a53ea605169339e66891464a3de05c415e05814087fddb6fa41074044a43b8fa61e21af00e674610ddc63c3975a118c39639dea848df0baacdaf61f604f5d9a5","msg":"{\"key\":\"myasset2\",\"value\":\"string111\"}"}' -X POST http://localhost:3000/account/sign
+curl  -H "Content-Type: application/json" -d '{"privatekey":"78fde71c52eb009b862a9041071f4cfe6721ea639d0a671dd1dd19292bd6799dbab233aa5573f4d06ec8376585357e7eee4026adabb6fed7ccb081df5ce9ddd3","msg":"myasset:string"}' -X POST http://localhost:3000/account/sign
 ```
 
 结果如下：
 
 ```json
-{"error":"","sign":"f3b2ff6c01455afc350c67037135d60a61ff049d81ec4a111d54fac07578fb0af1dc049205af16c6cf5ec77575dfa37a5d0e89991eca167c38a5d2c9c50b3308"}
+{"error":"","sign":"3ae68c53970c000e39d195647bd50488e17c147d7757dcebbca433f66d6279a822c5763e79ae1c53de58add275c0e02785dd69c45b816c8eab97f9f77dd1220d"}
+```
+
+<font>**② msg_value为json**</font>
+
+由于格式为{ token: "token", from: "from", to: "to", amount: 10}的json格式,我们需要进行base64加密然后进行签名，所以我们测试如下
+```shell
+curl  -H "Content-Type: application/json" -d '{"privatekey":"78fde71c52eb009b862a9041071f4cfe6721ea639d0a671dd1dd19292bd6799dbab233aa5573f4d06ec8376585357e7eee4026adabb6fed7ccb081df5ce9ddd3","msg":"myasset:eyJ0b2tlbiI6InRva2VuIiwiZnJvbSI6ImZyb20iLCJ0byI6InRvIiwiYW1vdW50IjoiMTAifQ=="}' -X POST http://localhost:3000/account/sign
+```
+
+结果如下：
+
+```json
+{"error":"","sign":"70474bf8a326677d92299cafcd33b5f27a7f2fe0de5694d775bcbdd126caf90804bae0d6a88a5be4b97d13e605898f575e982d73d2854bff29017c81b216da0b"}
 ```
 
 #### 资产登记
+由于msg中的value可以为一个string（字符串），也可以为格式为{ token: 'xxx', from: 'xxx', to: 'xxx', amount: 'xxx'}的json格式，所以我们和资产签名一样分两种情况演示：
+
+<font>**① msg_value为string**</font>
 
 ```shell
-curl  -H "Content-Type: application/json" -d '{"publickey":"61E21AF00E674610DDC63C3975A118C39639DEA848DF0BAACDAF61F604F5D9A5","sign":"f3b2ff6c01455afc350c67037135d60a61ff049d81ec4a111d54fac07578fb0af1dc049205af16c6cf5ec77575dfa37a5d0e89991eca167c38a5d2c9c50b3308","msg":"{\"key\":\"myasset2\",\"value\":\"string111\"}"}' -X POST http://localhost:3000/assets/new
+curl  -H "Content-Type: application/json" -d '{"publickey":"BAB233AA5573F4D06EC8376585357E7EEE4026ADABB6FED7CCB081DF5CE9DDD3","sign":"3ae68c53970c000e39d195647bd50488e17c147d7757dcebbca433f66d6279a822c5763e79ae1c53de58add275c0e02785dd69c45b816c8eab97f9f77dd1220d","msg":"myasset:string"}' -X POST http://localhost:3000/assets/new
 ```
 
 结果如下：
 
 ```json
-{"error":"","info":"{\n  \"jsonrpc\": \"2.0\",\n  \"id\": -1,\n  \"result\": {\n    \"check_tx\": {\n      \"code\": 0,\n      \"data\": null,\n      \"log\": \"\",\n      \"info\": \"\",\n      \"gasWanted\": \"1\",\n      \"gasUsed\": \"0\",\n      \"events\": [],\n      \"codespace\": \"\"\n    },\n    \"deliver_tx\": {\n      \"code\": 0,\n      \"data\": null,\n      \"log\": \"\",\n      \"info\": \"\",\n      \"gasWanted\": \"0\",\n      \"gasUsed\": \"0\",\n      \"events\": [],\n      \"codespace\": \"\"\n    },\n    \"hash\": \"917E8691662385EA143F65DEE660A99D3DE04D08B5C1CADC99695ADBE04C5A05\",\n    \"height\": \"10\"\n  }\n}","result":true}
+{
+  "error": "",
+  "info": "{
+  "jsonrpc": "2.0",
+  "id": "",
+  "result": {
+    "check_tx": {
+      "code": 0,
+      "data": null,
+      "log": "",
+      "info": "",
+      "gasWanted": "1",
+      "gasUsed": "0",
+      "events": [],
+      "codespace": ""
+    },
+    "deliver_tx": {
+      "code": 0,
+      "data": null,
+      "log": "",
+      "info": "",
+      "gasWanted": "0",
+      "gasUsed": "0",
+      "events": [],
+      "codespace": ""
+    },
+    "hash": "9D4F905666FB9BB194D9D9C6CEDB4E921A0597B7DA89B27F4419CB25A0B21A77",
+    "height": "54"
+  }
+}",
+  "result": true
+}
+```
+
+<font>**② msg_value为json**</font>
+
+```shell
+curl  -H "Content-Type: application/json" -d '{"publickey":"BAB233AA5573F4D06EC8376585357E7EEE4026ADABB6FED7CCB081DF5CE9DDD3","sign":"3ae68c53970c000e39d195647bd50488e17c147d7757dcebbca433f66d6279a822c5763e79ae1c53de58add275c0e02785dd69c45b816c8eab97f9f77dd1220d","msg":"myasset:eyJ0b2tlbiI6InRva2VuIiwiZnJvbSI6ImZyb20iLCJ0byI6InRvIiwiYW1vdW50IjoiMTAifQ=="}' -X POST http://localhost:3000/assets/new
+```
+
+结果如下：
+
+```json
+{
+  "error": "",
+  "info": "{
+  "jsonrpc": "2.0",
+  "id": "",
+  "result": {
+    "check_tx": {
+      "code": 0,
+      "data": null,
+      "log": "",
+      "info": "",
+      "gasWanted": "1",
+      "gasUsed": "0",
+      "events": [],
+      "codespace": ""
+    },
+    "deliver_tx": {
+      "code": 0,
+      "data": null,
+      "log": "",
+      "info": "",
+      "gasWanted": "0",
+      "gasUsed": "0",
+      "events": [],
+      "codespace": ""
+    },
+    "hash": "48AFC166273C0A8968F29323C914B9830A35616BF9A368FA45E674E9E085CCEF",
+    "height": "55"
+  }
+}",
+  "result": true
+}
 ```
 
 ### 数据库查询

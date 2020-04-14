@@ -29,24 +29,23 @@
             active-text="JSON"
             inactive-text="String"
             :disabled="signSuccessful"
-          >
-          </el-switch>
+          />
           <div v-if="msgtype==='string'">
-            <el-input  v-model="form_msg_value" :disabled="signSuccessful" />
+            <el-input v-model="form_msg_value" :disabled="signSuccessful" />
           </div>
           <div v-else>
             <el-form ref="msg_form" label-width="80px">
-              <el-form-item  label="Token:">
-                <el-input v-model="form_msg_value_token" :disabled="signSuccessful" style="margin-top:5px;margin-bottom:15px"/>
+              <el-form-item label="Token:">
+                <el-input v-model="form_msg_value_token" :disabled="signSuccessful" style="margin-top:5px;margin-bottom:15px" />
               </el-form-item>
-              <el-form-item  label="From:">
-                <el-input v-model="form_msg_key_from" :disabled="signSuccessful" style="margin-top:5px;margin-bottom:15px"/>
+              <el-form-item label="From:">
+                <el-input v-model="form_msg_key_from" :disabled="signSuccessful" style="margin-top:5px;margin-bottom:15px" />
               </el-form-item>
-              <el-form-item  label="To:">
-                <el-input v-model="form_msg_key_to" :disabled="signSuccessful" style="margin-top:5px;margin-bottom:15px"/>
+              <el-form-item label="To:">
+                <el-input v-model="form_msg_key_to" :disabled="signSuccessful" style="margin-top:5px;margin-bottom:15px" />
               </el-form-item>
               <el-form-item label="Amount:">
-                <el-input v-model="form_msg_key_amount" :disabled="signSuccessful" style="margin-top:5px;margin-bottom:15px"/>
+                <el-input v-model="form_msg_key_amount" :disabled="signSuccessful" style="margin-top:5px;margin-bottom:15px" />
               </el-form-item>
             </el-form>
           </div>
@@ -140,17 +139,12 @@ export default {
       this.form_msg_key_amount = ''
     },
     /**
-     * 构造msg base64的字符串
+     * 构造`key:value`的msg
      */
     getMsgString() {
       if (this.msgtype === 'string') {
-        let msgObj = {
-          key: this.form_msg_key,
-          value: this.form_msg_value
-        }
-        let msgString = JSON.stringify(msgObj)
-        let msgBase64String = Base64.encode(msgString)
-        return msgBase64String
+        let msgString = `${this.form_msg_key}:${this.form_msg_value}`
+        return msgString
       } else {
         let msgValueObj = {
           token: this.form_msg_value_token,
@@ -160,13 +154,8 @@ export default {
         }
         let msgValueString = JSON.stringify(msgValueObj)
         let msgValueBase64String = Base64.encode(msgValueString)
-        let msgObj = {
-          key: this.form_msg_key,
-          value: msgValueBase64String
-        }
-        let msgString = JSON.stringify(msgObj)
-        let msgBase64String = Base64.encode(msgString)
-        return msgBase64String
+        let msgString = `${this.form_msg_key}:${msgValueBase64String}`
+        return msgString
       }
     },
     /**
@@ -184,7 +173,7 @@ export default {
       this.registerResponse = result
       this.register_data = this.getRegisterResponse()
 
-      // 鍒ゆ柇鏄惁姝ｇ‘璇锋眰鎴愬姛
+      // 判断是否正确登记
       if (this.registerResponse.error === '') {
         this.resetButton = true
         this.active = 2
