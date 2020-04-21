@@ -170,6 +170,9 @@ curl  -H "Content-Type: application/json" -d '{"key": "D4E4CF08EC338970EFC0E6B8E
 }
 ```
 
+#### msg说明
+在资产签名，资产创世，资产查询测试中，POST请求数据中包含msg字段，该字段是处理后的一段加密Base64的字符串。其原始信息为包含token、from、to和amount四个属性的javascript对象，在前端经JSON.stringify()和Base64.encode()先后处理后形成最终的msg值。
+
 ### 数据库查询
 
 ​	资产会保存到Mongodb中，通过Mongodb客户端可以查询chain数据库的assets集合。
