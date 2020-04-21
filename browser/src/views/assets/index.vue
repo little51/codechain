@@ -16,39 +16,14 @@
         <el-form-item label="publicKey:">
           <el-input v-model="form_publicKey" :disabled="signSuccessful" />
         </el-form-item>
-        <el-form-item label="msg_key:">
-          <el-input v-model="form_msg_key" :disabled="signSuccessful" />
+        <el-form-item label="Token:">
+          <el-input v-model="form_msg_value_token" :disabled="signSuccessful" />
         </el-form-item>
-        <el-form-item label="msg_value:">
-          <el-switch
-            v-model="msgtype"
-            active-color="#13ce66"
-            inactive-color="ff4949"
-            active-value="json"
-            inactive-value="string"
-            active-text="JSON"
-            inactive-text="String"
-            :disabled="signSuccessful"
-          />
-          <div v-if="msgtype==='string'">
-            <el-input v-model="form_msg_value" :disabled="signSuccessful" />
-          </div>
-          <div v-else>
-            <el-form ref="msg_form" label-width="80px">
-              <el-form-item label="Token:">
-                <el-input v-model="form_msg_value_token" :disabled="signSuccessful" style="margin-top:5px;margin-bottom:15px" />
-              </el-form-item>
-              <el-form-item label="From:">
-                <el-input v-model="form_msg_key_from" :disabled="signSuccessful" style="margin-top:5px;margin-bottom:15px" />
-              </el-form-item>
-              <el-form-item label="To:">
-                <el-input v-model="form_msg_key_to" :disabled="signSuccessful" style="margin-top:5px;margin-bottom:15px" />
-              </el-form-item>
-              <el-form-item label="Amount:">
-                <el-input v-model="form_msg_key_amount" :disabled="signSuccessful" style="margin-top:5px;margin-bottom:15px" />
-              </el-form-item>
-            </el-form>
-          </div>
+        <el-form-item label="To:">
+          <el-input v-model="form_msg_key_to" :disabled="signSuccessful" />
+        </el-form-item>
+        <el-form-item label="Amount:">
+          <el-input v-model="form_msg_key_amount" :disabled="signSuccessful" />
         </el-form-item>
         <el-form-item v-show="!signSuccessful">
           <el-button type="primary" @click="onSubmit">Asset Register</el-button>
@@ -82,8 +57,6 @@ export default {
       active: 0,
       form_publicKey: '',
       form_privatekey: '',
-      form_msg_key: '',
-      form_msg_value: '',
       signResponse: null,
       registerResponse: null,
       json_data: '',
@@ -92,9 +65,7 @@ export default {
       startSign: false,
       startRegister: false,
       resetButton: false,
-      msgtype: 'string',
       form_msg_value_token: '',
-      form_msg_key_from: '',
       form_msg_key_to: '',
       form_msg_key_amount: ''
     }
@@ -104,17 +75,6 @@ export default {
       if (newData !== '' && !parseInt(newData)) {
         this.open("the information of Amount must be number")
       }
-    },
-    msgtype(newData, oldData) {
-      if (newData === 'string' && oldData === 'json') {
-        this.form_msg_value_token = ''
-        this.form_msg_key_from = ''
-        this.form_msg_key_to = ''
-        this.form_msg_key_amount = ''
-      }
-      if (oldData === 'string' && newData === 'json') {
-        this.form_msg_value = ''
-      }
     }
   },
   methods: {
@@ -122,8 +82,6 @@ export default {
       this.active = 0
       this.form_publicKey = ''
       this.form_privatekey = ''
-      this.form_msg_key = ''
-      this.form_msg_value = ''
       this.signResponse = null
       this.registerResponse = null
       this.json_data = ''
@@ -132,31 +90,23 @@ export default {
       this.startSign = false
       this.startRegister = false
       this.resetButton = false
-      this.msgtype = 'string'
       this.form_msg_value_token = ''
-      this.form_msg_key_from = ''
       this.form_msg_key_to = ''
       this.form_msg_key_amount = ''
     },
     /**
-     * 构造`key:value`的msg
+     * 构造msg
      */
     getMsgString() {
-      if (this.msgtype === 'string') {
-        let msgString = `${this.form_msg_key}:${this.form_msg_value}`
-        return msgString
-      } else {
-        let msgValueObj = {
-          token: this.form_msg_value_token,
-          from: this.form_msg_key_from,
-          to: this.form_msg_key_to,
-          amount: this.form_msg_key_amount
-        }
-        let msgValueString = JSON.stringify(msgValueObj)
-        let msgValueBase64String = Base64.encode(msgValueString)
-        let msgString = `${this.form_msg_key}:${msgValueBase64String}`
-        return msgString
+      let msgValueObj = {
+        token: this.form_msg_value_token,
+        from: this.form_publicKey,
+        to: this.form_msg_key_to,
+        amount: this.form_msg_key_amount
       }
+      let msgValueString = JSON.stringify(msgValueObj)
+      let msgValueBase64String = Base64.encode(msgValueString)
+      return msgValueBase64String
     },
     /**
      *  资产登记
@@ -175,7 +125,6 @@ export default {
 
       // 判断是否正确登记
       if (this.registerResponse.error === '') {
-        this.resetButton = true
         this.active = 2
       }
       this.resetButton = true
@@ -229,18 +178,12 @@ export default {
      *  判断是否全部正确输入
      */
     isInputRight() {
-      if (this.form_privatekey === '' || this.form_msg_key === '' || this.form_publicKey === '') {
+      if (this.form_privatekey === '' ||
+          this.form_publicKey === '' ||
+          this.form_msg_value_token === '' ||
+          this.form_msg_key_amount === ''
+      ) {
         return false
-      } else {
-        if (this.msgtype === 'string') {
-          if (this.form_msg_value === '') {
-            return false
-          }
-        } else {
-          if (this.form_msg_value_token === '' || this.form_msg_key_from === '' || this.form_msg_key_to === '' || this.form_msg_key_amount === '') {
-            return false
-          }
-        }
       }
       return true
     },

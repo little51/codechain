@@ -67,7 +67,7 @@ tendermint会在26657端口监听。
 ### 测试
 
 ```shell
-curl -s 'localhost:26657/broadcast_tx_commit?tx="key1:value1"'
+curl -s 'localhost:26657/broadcast_tx_commit?tx="eyJwdWJsaWNrZXkiOiJBNUZFQTY0NUMwOTlGNjlFRTVGQ0Q4QjY3RkU4M0VBQ0QwQ0JBQzQxMEFCQzVCOEZBNUNCNEU0NTFENUY1Q0VDIiwic2lnbiI6IjNiOTM2ODc5MzkyMDJiNTJhZWJlZDA2YjU1ZjY2M2ZiN2M0ZjYyNzU2MGY3OTA3NDM5ZDg4ZjYzMWM5NWI4ZjNjYzdkODBkNzEzMTgwZjRhMDg1MDBkZDU5YTgzNjlhODZmODlhODQ4NDI1NzZjMDJkMTFkYTI3NTdhNzBiZDBkIiwibXNnIjoiZXlKMGIydGxiaUk2SWtWUFJpSXNJbVp5YjIwaU9pSkJOVVpGUVRZME5VTXdPVGxHTmpsRlJUVkdRMFE0UWpZM1JrVTRNMFZCUTBRd1EwSkJRelF4TUVGQ1F6VkNPRVpCTlVOQ05FVTBOVEZFTlVZMVEwVkRJaXdpZEc4aU9pSkVOemM1UkRZelJqZzNRa0kyT1RreE4wTTBSRE5FUkRKQ056WXlNekUxT1RVeE9URTVOVVExUVRWQlJEYzBSakV3UWpjNFJEbEJNamRCT1RZMk5UVkRJaXdpWVcxdmRXNTBJam9pTlRBaWZRPT0ifQ=="'
 curl -s 'localhost:26657/abci_query?data="key=key1"'
 ```
 
@@ -97,47 +97,33 @@ curl -X POST http://localhost:3000/account/new
 
 ```json
 {
-	"address":"155703E01281055E6C198040FB53FB203157B903",
+	"address":"ECDCE3D5B6164768C0D4DFB74BF6B9E2C4D1682B",
 	"error":"",
-	"privateKey":"78fde71c52eb009b862a9041071f4cfe6721ea639d0a671dd1dd19292bd6799dbab233aa5573f4d06ec8376585357e7eee4026adabb6fed7ccb081df5ce9ddd3",
-	"publicKey":"BAB233AA5573F4D06EC8376585357E7EEE4026ADABB6FED7CCB081DF5CE9DDD3"}
+	"privateKey":"80d7f6a76d6bbc9893efff3721a49432f5ffdba39e0c98256d7e3fdd53e6b807d4e4cf08ec338970efc0e6b8e1dde3d4129a6bb5588ba90f72f9a0d6c0ed62ce",
+  "publicKey":"D4E4CF08EC338970EFC0E6B8E1DDE3D4129A6BB5588BA90F72F9A0D6C0ED62CE"
+}
 ```
 
 #### 资产签名
-由于msg中的value可以为一个string（字符串），也可以为格式为{ token: 'xxx', from: 'xxx', to: 'xxx', amount: 'xxx'}的json格式，所以我们分两种情况演示：
+资产交易需要先进行资产签名，验证发起资产交易账户的公私钥对
 
-<font>**① msg_value为string**</font>
-
+测试如下
 ```shell
-curl  -H "Content-Type: application/json" -d '{"privatekey":"78fde71c52eb009b862a9041071f4cfe6721ea639d0a671dd1dd19292bd6799dbab233aa5573f4d06ec8376585357e7eee4026adabb6fed7ccb081df5ce9ddd3","msg":"myasset:string"}' -X POST http://localhost:3000/account/sign
+curl  -H "Content-Type: application/json" -d '{"privatekey":"80d7f6a76d6bbc9893efff3721a49432f5ffdba39e0c98256d7e3fdd53e6b807d4e4cf08ec338970efc0e6b8e1dde3d4129a6bb5588ba90f72f9a0d6c0ed62ce","msg":"eyJ0b2tlbiI6IktLSyIsImZyb20iOiJENEU0Q0YwOEVDMzM4OTcwRUZDMEU2QjhFMURERTNENDEyOUE2QkI1NTg4QkE5MEY3MkY5QTBENkMwRUQ2MkNFIiwidG8iOiIiLCJhbW91bnQiOiI2MDAifQ=="}' -X POST http://localhost:3000/account/sign
 ```
 
 结果如下：
 
 ```json
-{"error":"","sign":"3ae68c53970c000e39d195647bd50488e17c147d7757dcebbca433f66d6279a822c5763e79ae1c53de58add275c0e02785dd69c45b816c8eab97f9f77dd1220d"}
+{"error":"","sign":"25a76ff76196706d63c3190cfb97edd45f322f046cb9d78592eda1368b42c15c63a6780a777a40de626b9b9530e9433f51d8ee300b881ea55941cc53b5b27507"}
 ```
 
-<font>**② msg_value为json**</font>
+#### 资产创世
+在资产交易之前，应该确认发起者拥有足够的token，可以通过资产创世的方式来创建一种新的token
 
-由于格式为{ token: "token", from: "from", to: "to", amount: 10}的json格式,我们需要进行base64加密然后进行签名，所以我们测试如下
+测试如下：
 ```shell
-curl  -H "Content-Type: application/json" -d '{"privatekey":"78fde71c52eb009b862a9041071f4cfe6721ea639d0a671dd1dd19292bd6799dbab233aa5573f4d06ec8376585357e7eee4026adabb6fed7ccb081df5ce9ddd3","msg":"myasset:eyJ0b2tlbiI6InRva2VuIiwiZnJvbSI6ImZyb20iLCJ0byI6InRvIiwiYW1vdW50IjoiMTAifQ=="}' -X POST http://localhost:3000/account/sign
-```
-
-结果如下：
-
-```json
-{"error":"","sign":"70474bf8a326677d92299cafcd33b5f27a7f2fe0de5694d775bcbdd126caf90804bae0d6a88a5be4b97d13e605898f575e982d73d2854bff29017c81b216da0b"}
-```
-
-#### 资产登记
-由于msg中的value可以为一个string（字符串），也可以为格式为{ token: 'xxx', from: 'xxx', to: 'xxx', amount: 'xxx'}的json格式，所以我们和资产签名一样分两种情况演示：
-
-<font>**① msg_value为string**</font>
-
-```shell
-curl  -H "Content-Type: application/json" -d '{"publickey":"BAB233AA5573F4D06EC8376585357E7EEE4026ADABB6FED7CCB081DF5CE9DDD3","sign":"3ae68c53970c000e39d195647bd50488e17c147d7757dcebbca433f66d6279a822c5763e79ae1c53de58add275c0e02785dd69c45b816c8eab97f9f77dd1220d","msg":"myasset:string"}' -X POST http://localhost:3000/assets/new
+curl  -H "Content-Type: application/json" -d '{"publickey":"D4E4CF08EC338970EFC0E6B8E1DDE3D4129A6BB5588BA90F72F9A0D6C0ED62CE","sign":"25a76ff76196706d63c3190cfb97edd45f322f046cb9d78592eda1368b42c15c63a6780a777a40de626b9b9530e9433f51d8ee300b881ea55941cc53b5b27507","msg":"eyJ0b2tlbiI6IktLSyIsImZyb20iOiJENEU0Q0YwOEVDMzM4OTcwRUZDMEU2QjhFMURERTNENDEyOUE2QkI1NTg4QkE5MEY3MkY5QTBENkMwRUQ2MkNFIiwidG8iOiIiLCJhbW91bnQiOiI2MDAifQ=="}' -X POST http://localhost:3000/assets/new
 ```
 
 结果如下：
@@ -145,42 +131,16 @@ curl  -H "Content-Type: application/json" -d '{"publickey":"BAB233AA5573F4D06EC8
 ```json
 {
   "error": "",
-  "info": "{
-  "jsonrpc": "2.0",
-  "id": "",
-  "result": {
-    "check_tx": {
-      "code": 0,
-      "data": null,
-      "log": "",
-      "info": "",
-      "gasWanted": "1",
-      "gasUsed": "0",
-      "events": [],
-      "codespace": ""
-    },
-    "deliver_tx": {
-      "code": 0,
-      "data": null,
-      "log": "",
-      "info": "",
-      "gasWanted": "0",
-      "gasUsed": "0",
-      "events": [],
-      "codespace": ""
-    },
-    "hash": "9D4F905666FB9BB194D9D9C6CEDB4E921A0597B7DA89B27F4419CB25A0B21A77",
-    "height": "54"
-  }
-}",
+  "info": "{ \n \"jsonrpc\": "2.0",\n \"id\": \"\",\n \"result\": {\n \"check_tx\": {\n \"code\": 0,\n \"data\": null,\n \"log\": \"\",\n \"info\": \"CheckTx successfully carried out the signVerify\",\n \"gasWanted\": \"1\" \n \"gasUsed\": "0",\n \"events\": [], \n \"codespace\": \"\"},\n \"deliver_tx\": {\n \"code\": 0,\n \"data\": null, \n \"log\": \"\", \n \"info\": \"\",\n \"gasWanted\": \"0\",\n \"gasUsed\": \"0\",\n \"events\": [],\n \"codespace\": \"\"},\n \"hash\": \"91C2DA3A01E9093FB7CF1FD4A30C93A5164A8F20FFCE28020BD7AB1497FB3AE8\",\n \"height\": \"82\"}}\n",
   "result": true
 }
 ```
 
-<font>**② msg_value为json**</font>
+#### 资产交易
+两个不同账户之间可以进行相同token的交易
 
 ```shell
-curl  -H "Content-Type: application/json" -d '{"publickey":"BAB233AA5573F4D06EC8376585357E7EEE4026ADABB6FED7CCB081DF5CE9DDD3","sign":"3ae68c53970c000e39d195647bd50488e17c147d7757dcebbca433f66d6279a822c5763e79ae1c53de58add275c0e02785dd69c45b816c8eab97f9f77dd1220d","msg":"myasset:eyJ0b2tlbiI6InRva2VuIiwiZnJvbSI6ImZyb20iLCJ0byI6InRvIiwiYW1vdW50IjoiMTAifQ=="}' -X POST http://localhost:3000/assets/new
+curl  -H "Content-Type: application/json" -d '{"publickey":"D4E4CF08EC338970EFC0E6B8E1DDE3D4129A6BB5588BA90F72F9A0D6C0ED62CE","sign":"df2d0652c8994ddc14ec70f9532aff7fb9b4ccd3077bf9c88c936a65a18a500e380f639f410d4058deddc2d4047bee070e229b0b5e86aaa97448374ac854770d","msg":"eyJ0b2tlbiI6IktLSyIsImZyb20iOiJENEU0Q0YwOEVDMzM4OTcwRUZDMEU2QjhFMURERTNENDEyOUE2QkI1NTg4QkE5MEY3MkY5QTBENkMwRUQ2MkNFIiwidG8iOiJBNUZFQTY0NUMwOTlGNjlFRTVGQ0Q4QjY3RkU4M0VBQ0QwQ0JBQzQxMEFCQzVCOEZBNUNCNEU0NTFENUY1Q0VDIiwiYW1vdW50IjoiMzAwIn0="}' -X POST http://localhost:3000/assets/new
 ```
 
 结果如下：
@@ -188,35 +148,25 @@ curl  -H "Content-Type: application/json" -d '{"publickey":"BAB233AA5573F4D06EC8
 ```json
 {
   "error": "",
-  "info": "{
-  "jsonrpc": "2.0",
-  "id": "",
-  "result": {
-    "check_tx": {
-      "code": 0,
-      "data": null,
-      "log": "",
-      "info": "",
-      "gasWanted": "1",
-      "gasUsed": "0",
-      "events": [],
-      "codespace": ""
-    },
-    "deliver_tx": {
-      "code": 0,
-      "data": null,
-      "log": "",
-      "info": "",
-      "gasWanted": "0",
-      "gasUsed": "0",
-      "events": [],
-      "codespace": ""
-    },
-    "hash": "48AFC166273C0A8968F29323C914B9830A35616BF9A368FA45E674E9E085CCEF",
-    "height": "55"
-  }
-}",
+  "info": "{ \n \"jsonrpc\": "2.0",\n \"id\": \"\",\n \"result\": {\n \"check_tx\": {\n \"code\": 0,\n \"data\": null,\n \"log\": \"\",\n \"info\": \"CheckTx successfully carried out the signVerify\",\n \"gasWanted\": \"1\" \n \"gasUsed\": "0",\n \"events\": [], \n \"codespace\": \"\"},\n \"deliver_tx\": {\n \"code\": 0,\n \"data\": null, \n \"log\": \"\", \n \"info\": \"\",\n \"gasWanted\": \"0\",\n \"gasUsed\": \"0\",\n \"events\": [],\n \"codespace\": \"\"},\n \"hash\": \"B80F6B79569989513E5F23552CDBB53BA854F468FC2A4BFF1696C4C897660734\",\n \"height\": \"83\"}}\n",
   "result": true
+}
+```
+
+#### 资产查询
+通过公钥可以来查询到当前所有不同token的资产信息
+
+测试如下：
+```shell
+curl  -H "Content-Type: application/json" -d '{"key": "D4E4CF08EC338970EFC0E6B8E1DDE3D4129A6BB5588BA90F72F9A0D6C0ED62CE"}' -X POST http://localhost:3000/assets/query
+```
+
+结果如下：
+```json
+{
+  "error":"",
+  "info":"{\n  \"jsonrpc\": \"2.0\",\n  \"id\": -1,\n  \"result\": {\n    \"response\": {\n      \"code\": 0,\n      \"log\": \"\",\n      \"info\": \"D4E4CF08EC338970EFC0E6B8E1DDE3D4129A6BB5588BA90F72F9A0D6C0ED62CE\",\n      \"index\": \"0\",\n      \"key\": null,\n      \"value\": \"eyJhcnJheSI6IFt7InB1YmxpY2tleSI6IkQ0RTRDRjA4RUMzMzg5NzBFRkMwRTZCOEUxRERFM0Q0MTI5QTZCQjU1ODhCQTkwRjcyRjlBMEQ2QzBFRDYyQ0UiLCJ0b2tlbiI6IktLSyIsImFtb3VudCI6MzAwfV19\",\n      \"proof\": null,\n      \"height\": \"0\",\n      \"codespace\": \"\"\n    }\n  }\n}",
+  "result":true
 }
 ```
 

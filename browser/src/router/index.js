@@ -125,7 +125,7 @@ export const constantRoutes = [
         path: 'new',
         name: 'new',
         component: () => import('@/views/assets/index'),
-        meta: { title: 'Add Asset', icon: 'link' }
+        meta: { title: 'Asset Transaction', icon: 'link' }
       },
       {
         path: 'query',

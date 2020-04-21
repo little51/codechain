@@ -7,23 +7,39 @@
       class="query-query"
     />
     <el-button type="primary" @click="queryValue">Query</el-button>
-    <textarea
-      v-if="json_data!==''"
-      v-model="json_data"
-      class="query-input"
-      readonly
-    />
+    <el-table
+      v-if="responseData.length>0"
+      border
+      :data="responseData"
+      style="width: 98%;margin-top:20px">
+      <el-table-column
+        prop="publickey"
+        label="publickey"
+        width="900"
+      />
+      <el-table-column
+        prop="token"
+        label="token"
+        width="180"
+      />
+      <el-table-column
+        prop="amount"
+        label="amount"
+      />
+    </el-table>
+    <p v-else align="left" style="color:#97A8BE;padding-left:5px">no Data</p>
   </div>
 </template>
 
 <script>
 import axios from 'axios'
+import { Base64 } from 'js-base64'
 
 export default {
   data() {
     return {
       query_key: '',
-      json_data: '',
+      responseData: [],
       queryData: null
     }
   },
@@ -32,6 +48,7 @@ export default {
      * 查询
      */
     async queryValue() {
+      this.responseData = []
       if (this.query_key === '') {
         this.open()
         return Promise.resolve()
@@ -49,16 +66,20 @@ export default {
         let json = await axios.post('http://localhost:3000/assets/query', postData)
         let result = json.data
         this.queryData = result
-        this.json_data = this.getQueryResponse()
+
+        // 响应info是字符串，需要json解析
+        let resultObj = JSON.parse(result["info"])
+        let arrayBase64String = resultObj.result.response.value
+
+        // 拿到array数据
+        if (arrayBase64String !== null) {
+          let arrayBase64Obj = Base64.decode(arrayBase64String)
+          let arrayObj = JSON.parse(arrayBase64Obj)
+          let array = arrayObj.array
+          this.responseData = array
+        }
         loading.close()
       }, 500)
-    },
-    /**
-     * 获取文本域的数据
-     */
-    getQueryResponse() {
-      return `\n{\n  "error": "${this.queryData.error}",\n "info": "${this.queryData.info}"\n "result": "${this.queryData.result}"\n}
-      `
     },
     /**
      * 未正确输入的提示
@@ -78,19 +99,6 @@ export default {
   }
   &-container {
     padding: 15px;
-  }
-  &-input {
-    width: 100%;
-    height: 450px;
-    border-radius: 15px;
-    background-color: #f4f5f7;
-    font-weight: 500;
-    color: #304156;
-    font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
-    border-style: none;
-    box-shadow: 1px 1px 5px 1px #888888;
-    margin-top: 20px;
-    padding-left: 15px;
   }
 }
 </style>

@@ -4,8 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-
-	"encoding/json"
+	"strconv"
 
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/version"
@@ -96,68 +95,65 @@ func (CoreApplication) SetOption(req abcitypes.RequestSetOption) abcitypes.Respo
 func (app *CoreApplication) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDeliverTx {
 	_msgString, ok := app.signVerify(req.Tx)
 	if !ok {
-		return abcitypes.ResponseDeliverTx{Code: 1}
+		return abcitypes.ResponseDeliverTx{Code: 1, Info: "DeliverTx verification failed"}
 	}
-	_msgObj, err := app.DecodeMsg(_msgString)
+	tokenObj, err := app.DecodeMsg(_msgString)
 	if err != nil {
-		return abcitypes.ResponseDeliverTx{Code: 1, Log: "DecodeMsg is wrong"}
+		return abcitypes.ResponseDeliverTx{Code: 1, Info: "DeliverTx DecodeMsg failed"}
 	}
-	tokenObj, err := app.JudgeMsgValueType(string(_msgObj.Value))
-	if err != nil {
-		// save value string in mongodb
-		//find tx,if exists then update else insert
-		fmt.Println("ready to save string data to mongodb")
-		fmt.Println(_msgObj.Key)
-		fmt.Println(_msgObj.Value)
-		filter := bson.M{"key": string(_msgObj.Key)}
-		assetOld := bson.M{}
-		assetNew := bson.M{"key": string(_msgObj.Key), "value": string(_msgObj.Value)}
-		collection := app.db.Database("chain").Collection("assets")
-		err := collection.FindOne(context.TODO(), filter).Decode(&assetOld)
+	_to := tokenObj.To
+	_from := tokenObj.From
+	_token := tokenObj.Token
+	_amount := tokenObj.Amount
+	if _to == "" || _to == _from {
+		// create new token
+		_, err := app.MongoDB_Query_CodeName(string(_token))
 		if err == nil {
-			collection.UpdateOne(context.TODO(), assetOld, bson.M{"$set": assetNew})
+			return abcitypes.ResponseDeliverTx{Code: 1, Info: "DeliverTx CodeName has existed"}
 		} else {
-			collection.InsertOne(context.TODO(), assetNew)
+			if _, err := app.MongoDB_Add_CodeName(string(_token)); err != nil {
+				return abcitypes.ResponseDeliverTx{Code: 1, Info: "DeliverTx MongoDB_Add_CodeName failed"}
+			}
 		}
-	} else {
-		// save value json in mongodb
-		//find tx,if exists then update else insert
-		fmt.Println("ready to save json data to mongodb")
-		fmt.Println(_msgObj.Key)
-		fmt.Println(tokenObj)
-		filter := bson.M{"key": string(_msgObj.Key)}
-		assetOld := bson.M{}
-		valueObj := bson.M{"token": tokenObj.Token, "from": tokenObj.From, "to": tokenObj.To, "Amount": tokenObj.Amount}
-		assetNew := bson.M{
-			"key":   string(_msgObj.Key),
-			"value": valueObj,
+		// add asset in assets
+		assetNew := Asset{Publickey: _from, Token: _token, Amount: _amount}
+		if _, err := app.MongoDB_Update_Assets(_from, _token, assetNew); err != nil {
+			return abcitypes.ResponseDeliverTx{Code: 1, Info: "DeliverTx MongoDB_Update_Assets failed"}
 		}
-		collection := app.db.Database("chain").Collection("assets")
-		err := collection.FindOne(context.TODO(), filter).Decode(&assetOld)
-		if err == nil {
-			collection.UpdateOne(context.TODO(), assetOld, bson.M{"$set": assetNew})
+		return abcitypes.ResponseDeliverTx{Code: 0}
+	}
+	if _to != _from {
+		fromPublic, err := app.MongoDB_Query_Assets(_from, _token)
+		if err != nil {
+			info := "you have any code of " + _token
+			return abcitypes.ResponseDeliverTx{Code: 1, Info: info}
+		}
+		if fromPublic.Amount < _amount {
+			return abcitypes.ResponseDeliverTx{Code: 1, Info: "your amount is not enough"}
+		}
+		fromAssets := Asset{Publickey: _from, Token: _token, Amount: fromPublic.Amount - _amount}
+
+		toPublic, err := app.MongoDB_Query_Assets(_to, _token)
+		var toAssets Asset
+		if err != nil {
+			toAssets = Asset{Publickey: _to, Token: _token, Amount: _amount}
 		} else {
-			collection.InsertOne(context.TODO(), assetNew)
+			toAssets = Asset{Publickey: _to, Token: _token, Amount: toPublic.Amount + _amount}
 		}
+
+		app.MongoDB_Update_Assets(_from, _token, fromAssets)
+		app.MongoDB_Update_Assets(_to, _token, toAssets)
 	}
-	var _code uint32
-	//tokens parse
-	var tokenTx TokenTx
-	errParse := json.Unmarshal([]byte(string(_msgObj.Value)), &tokenTx)
-	if errParse == nil {
-		_code = DoTokenTx(app, tokenTx)
-	}
-	return abcitypes.ResponseDeliverTx{Code: _code}
+	return abcitypes.ResponseDeliverTx{Code: 0}
 }
 
 // CheckTx check tx format .
 func (app *CoreApplication) CheckTx(req abcitypes.RequestCheckTx) abcitypes.ResponseCheckTx {
 	_, ok := app.signVerify(req.Tx)
 	if !ok {
-		return abcitypes.ResponseCheckTx{Code: 1, GasWanted: 1}
+		return abcitypes.ResponseCheckTx{Code: 1, GasWanted: 1, Info: "CheckTx failedly carried out the signVerify"}
 	}
-	return abcitypes.ResponseCheckTx{Code: 0, GasWanted: 1}
-
+	return abcitypes.ResponseCheckTx{Code: 0, GasWanted: 1, Info: "CheckTx successfully carried out the signVerify"}
 }
 
 // Commit interface .
@@ -175,18 +171,25 @@ func (app *CoreApplication) Commit() abcitypes.ResponseCommit {
 func (app *CoreApplication) Query(reqQuery abcitypes.RequestQuery) (resQuery abcitypes.ResponseQuery) {
 	parts := bytes.Split(reqQuery.Data, []byte("="))
 	value := string(parts[1])
-	filter := bson.M{"key": string(value)}
-	collection := app.db.Database("chain").Collection("assets")
-	Core := bson.M{}
-	err := collection.FindOne(context.TODO(), filter).Decode(&Core)
+	assetsArray, err := app.MongoDB_QueryAllKindAssetsFromPublicKey(value)
 	if err != nil {
-		error := fmt.Sprintf("%s", err)
 		resQuery.Code = 1
-		resQuery.Log = error
+		resQuery.Log = "MongoDB_QueryAllKindAssetsFromPublicKey has something wrong"
 		resQuery.Value = nil
 	} else {
-		if value, ok := Core["value"].(string); ok {
-			resQuery.Value = []byte(value)
+		if len(assetsArray) > 0 {
+			var arrayCore = ""
+			for i := 0; i < len(assetsArray); i++ {
+				obj := "{\"publickey\":\"" + string(assetsArray[i].Publickey) + "\",\"token\":\"" + string(assetsArray[i].Token) + "\",\"amount\":" + strconv.Itoa(int(assetsArray[i].Amount)) + "}"
+
+				if i != len(assetsArray)-1 {
+					arrayCore += obj + ","
+				} else {
+					arrayCore += obj
+				}
+			}
+			arrayAll := "{\"array\": [" + arrayCore + "]}"
+			resQuery.Value = []byte(arrayAll)
 			resQuery.Info = value
 			resQuery.Code = 0
 			resQuery.Log = ""

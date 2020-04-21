@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -16,11 +15,6 @@ type TxStruct struct {
 	PublicKey string `json:"publickey"`
 	Sign      string `json:"sign"`
 	Msg       string `json:"msg"`
-}
-
-type MsgStruct struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
 }
 
 // isTxJson
@@ -55,17 +49,8 @@ func (app *CoreApplication) signVerify(req []byte) (string, bool) {
 	return _msg, true
 }
 
-// decode base64 of mag
-func (app *CoreApplication) DecodeMsg(msg string) (msgJson MsgStruct, err error) {
-	var msgObj MsgStruct
-	parts := bytes.Split([]byte(msg), []byte(":"))
-	msgObj.Key = string(parts[0])
-	msgObj.Value = string(parts[1])
-	return msgObj, nil
-}
-
 // judgement the Type of Value in Msg
-func (app *CoreApplication) JudgeMsgValueType(value string) (TokenTx, error) {
+func (app *CoreApplication) DecodeMsg(value string) (TokenTx, error) {
 	var tokenString TokenTxString
 	var tokenObj TokenTx
 	decodeBytes, err := base64.StdEncoding.DecodeString(value)
@@ -73,7 +58,6 @@ func (app *CoreApplication) JudgeMsgValueType(value string) (TokenTx, error) {
 		fmt.Println("decodeString msg wrong")
 		return tokenObj, err
 	}
-
 	if err := json.Unmarshal([]byte(decodeBytes), &tokenString); err != nil {
 		fmt.Println("value string is not a right JSON")
 		return tokenObj, err
