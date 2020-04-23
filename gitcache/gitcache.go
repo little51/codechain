@@ -68,33 +68,86 @@ func execShell(cmd string, args []string) string {
 	return ""
 }
 
-func fetchFromLocal(remote string, local string) string {
+func fetchMirrorFromRemote(remote string, local string, unshallow string) string {
+	localLockExist, _ := PathExists(local + "/shallow.lock")
+	if localLockExist {
+		return "valid local cache error : cache is locked,please wait"
+	}
 	//var args = "-C " + local + " remote set-url origin " + remote
 	var err = execShell("git", []string{"-C", local, "remote", "set-url", "origin", remote})
 	if err != "" {
 		return err
 	}
 	//args = "-C " + local + " fetch "
-	return execShell("git", []string{"-C", local, "fetch"})
+	if unshallow == "" {
+		return execShell("git", []string{"-C", local, "fetch", "--depth=1"})
+	} else {
+		return execShell("git", []string{"-C", local, "fetch", "--unshallow"})
+	}
 }
 
-func cloneFromRemote(remote string, local string) string {
+func cloneMirrorFromRemote(remote string, local string) string {
 	return execShell("git", []string{"clone", "--depth=1", "--mirror", "--progress", remote, local})
 }
 
+func PathExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
+}
+
+func validLocalCache(local string) bool {
+	var err = execShell("git", []string{"-C", local, "remote"})
+	if err == "" {
+		return true
+	} else {
+		os.RemoveAll(local)
+		return false
+	}
+}
+
+func ifExistsLocalCache(local string) (bool, string) {
+	localGitExist, _ := PathExists(local)
+	//.git path exists
+	if localGitExist {
+		localLockExist, _ := PathExists(local + "/shallow.lock")
+		if localLockExist {
+			var err1 = "valid local cache error : cache is locked,please wait"
+			log.Println(err1)
+			return true, err1
+		} else {
+			return validLocalCache(local), ""
+		}
+	} else {
+		return false, ""
+	}
+}
+
 func mirrorFromRemote(remote string, local string) string {
-	var err = fetchFromLocal(remote, local)
+	var localExists, err = ifExistsLocalCache(local)
 	if err != "" {
-		log.Printf("git command: fetch from local cache error :%s\n", err)
-		err = cloneFromRemote(remote, local)
+		return err
+	}
+	if localExists {
+		log.Printf("valid local cache : .git path exists")
+		return ""
+	} else {
+		log.Printf("valid local cache : .git path not exists")
+		err = cloneMirrorFromRemote(remote, local)
 		if err != "" {
 			log.Printf("git command: clone from remote error : %s\n", err)
 		}
+		return err
 	}
-	return err
 }
 
 func execGitCommand(cmd string, version string, args []string) []byte {
+	log.Printf("execGitCommand : %v,%v\n", cmd, args)
 	command := exec.Command(cmd, args...)
 	if len(version) > 0 {
 		command.Env = append(os.Environ(), fmt.Sprintf("GIT_PROTOCOL=%s", version))
@@ -167,12 +220,13 @@ func RequestHandler(basedir string) http.HandlerFunc {
 		var httpParams HttpParams = parseHttpParams(r)
 		log.Printf("git params: %+v\n", httpParams)
 		if ((r.Method == "GET") && (httpParams.IsInfoReq)) || ((r.Method != "GET") && (!httpParams.IsInfoReq)) {
-			log.Printf("git request valid: ok")
+			log.Printf("git request: %s %v ok\n", r.Method, httpParams.IsInfoReq)
 		} else {
 			//w.WriteHeader(200)
 			//return
 			panic("bad request")
 		}
+		//only support git-upload-pack because
 		if httpParams.Gitservice != "git-upload-pack" {
 			if httpParams.Gitservice == "git-receive-pack" {
 				body := RequestFromRemote(r)
