@@ -14,10 +14,10 @@ func main() {
 	log.SetFlags(log.Lshortfile | log.LstdFlags)
 	log.SetPrefix("TRACE: ")
 	//flag params
-	flag.StringVar(&g_Basedir, "b", "f:/temp1", "默认为f:/temp1")
+	flag.StringVar(&g_Basedir, "b", "/var/gitcache", "默认为/var/gitcache")
 	flag.StringVar(&port, "p", "5000", "端口号，默认为5000")
 	flag.Parse()
-	log.Printf("basedir:%v port:%v", g_Basedir, port)
+	log.Printf("basedir:%v , port:%v", g_Basedir, port)
 	//cron
 	Cron()
 	//listen
