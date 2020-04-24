@@ -30,7 +30,8 @@ func walkDir(dirpath string, depth int, f func(string)) {
 	for _, file := range files {
 		if file.IsDir() {
 			walkDir(dirpath+"/"+file.Name(), depth+1, f)
-			if strings.HasSuffix(file.Name(), ".git") {
+			headExist, _ := PathExists(dirpath + "/" + file.Name() + "/HEAD")
+			if headExist && (!strings.HasSuffix(file.Name(), "logs")) {
 				f(dirpath + "/" + file.Name())
 			}
 			continue
@@ -59,6 +60,7 @@ func GetMirrorProgress(repoName string) string {
 func Cron() {
 	c := cron.New()
 	c.AddFunc("0 0 */2 * * *", func() {
+		//c.AddFunc("0 */1 * * * *", func() {
 		SyncLocalMirrorFromRemote()
 	})
 	c.Start()
