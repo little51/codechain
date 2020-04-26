@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
 	"strings"
@@ -15,8 +14,12 @@ var _IS_SYNC = false
 func fetchMirrorFromRemoteUnshallow(repository string) {
 	remote := "https:/" + strings.Replace(repository, g_Basedir, "", -1)
 	local := repository
-	fmt.Printf("%s %s\n", remote, local)
-	fetchMirrorFromRemote(remote, local, "unshallow")
+	log.Printf("git remote update: %s begin\n", local)
+	err := fetchMirrorFromRemote(remote, local, "update")
+	if err == "" {
+		err = "ok"
+	}
+	log.Printf("git remote update: %s %s\n", local, err)
 }
 
 func walkDir(dirpath string, depth int, f func(string)) {
@@ -41,11 +44,13 @@ func walkDir(dirpath string, depth int, f func(string)) {
 
 func SyncLocalMirrorFromRemote() {
 	if _IS_SYNC {
+		log.Println("syncing local mirror from remote,sync ignore")
 		return
 	}
-	log.Println("SyncLocalMirrorFromRemote")
+	log.Println("sync local mirror from remote begin")
 	_IS_SYNC = true
 	walkDir(g_Basedir, 0, fetchMirrorFromRemoteUnshallow)
+	log.Println("sync local mirror from remote end")
 	_IS_SYNC = false
 }
 

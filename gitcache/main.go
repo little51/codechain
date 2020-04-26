@@ -12,7 +12,7 @@ var port string
 func main() {
 	//log params
 	log.SetFlags(log.Lshortfile | log.LstdFlags)
-	log.SetPrefix("TRACE: ")
+	log.SetPrefix("LOG: ")
 	//flag params
 	flag.StringVar(&g_Basedir, "b", "/var/gitcache", "默认为/var/gitcache")
 	flag.StringVar(&port, "p", "5000", "端口号，默认为5000")

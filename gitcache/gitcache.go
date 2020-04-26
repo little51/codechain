@@ -54,6 +54,7 @@ func RequestFromRemote(r *http.Request) *http.Response {
 }
 
 func execShell(cmd string, args []string) string {
+	log.Printf("execute local git command : %v,%v\n", cmd, args)
 	var command = exec.Command(cmd, args...)
 	command.Stdout = os.Stdout
 	command.Stderr = os.Stderr
@@ -68,7 +69,7 @@ func execShell(cmd string, args []string) string {
 	return ""
 }
 
-func fetchMirrorFromRemote(remote string, local string, unshallow string) string {
+func fetchMirrorFromRemote(remote string, local string, update string) string {
 	localLockExist, _ := PathExists(local + "/shallow.lock")
 	if localLockExist {
 		return "valid local cache error : cache is locked,please wait"
@@ -79,10 +80,11 @@ func fetchMirrorFromRemote(remote string, local string, unshallow string) string
 		return err
 	}
 	//args = "-C " + local + " fetch "
-	if unshallow == "" {
+	if update == "" {
 		return execShell("git", []string{"-C", local, "fetch", "--depth=1"})
 	} else {
-		return execShell("git", []string{"-C", local, "fetch", "--unshallow"})
+		//return execShell("git", []string{"-C", local, "fetch", "--unshallow"})
+		return execShell("git", []string{"-C", local, "remote", "update"})
 	}
 }
 
@@ -117,7 +119,7 @@ func ifExistsLocalCache(local string) (bool, string) {
 	if localGitExist {
 		localLockExist, _ := PathExists(local + "/shallow.lock")
 		if localLockExist {
-			var err1 = "valid local cache error : cache is locked,please wait"
+			var err1 = "git cache is updating... ...,please wait"
 			log.Println(err1)
 			return true, err1
 		} else {
@@ -134,10 +136,10 @@ func mirrorFromRemote(remote string, local string) string {
 		return err
 	}
 	if localExists {
-		log.Printf("valid local cache : .git path exists")
+		log.Printf("valid local cache! .git path exists")
 		return ""
 	} else {
-		log.Printf("valid local cache : .git path not exists")
+		log.Printf("valid local cache! .git path not exists")
 		err = cloneMirrorFromRemote(remote, local)
 		if err != "" {
 			log.Printf("git command: clone from remote error : %s\n", err)
@@ -147,7 +149,7 @@ func mirrorFromRemote(remote string, local string) string {
 }
 
 func execGitCommand(cmd string, version string, args []string) []byte {
-	log.Printf("execGitCommand : %v,%v\n", cmd, args)
+	log.Printf("execute local git command : %v,%v\n", cmd, args)
 	command := exec.Command(cmd, args...)
 	if len(version) > 0 {
 		command.Env = append(os.Environ(), fmt.Sprintf("GIT_PROTOCOL=%s", version))
@@ -164,15 +166,15 @@ func execShelldPipe(cmd string, args []string, w http.ResponseWriter, r *http.Re
 	var command = exec.Command(cmd, args...)
 	in, err := command.StdinPipe()
 	if err != nil {
-		log.Printf("execShelldPipe error: %v\n", err)
+		log.Printf("execute shell with pipe error: %v\n", err)
 	}
 	stdout, err := command.StdoutPipe()
 	if err != nil {
-		log.Printf("execShelldPipe error: %v\n", err)
+		log.Printf("execute shell with pipe error: %v\n", err)
 	}
 	err = command.Start()
 	if err != nil {
-		log.Printf("execShelldPipe error: %v\n", err)
+		log.Printf("execute shell with pipe error: %v\n", err)
 	}
 	var reader io.ReadCloser
 	switch r.Header.Get("Content-Encoding") {
@@ -186,7 +188,7 @@ func execShelldPipe(cmd string, args []string, w http.ResponseWriter, r *http.Re
 	in.Close()
 	flusher, ok := w.(http.Flusher)
 	if !ok {
-		panic("execShelldPipe expected http.ResponseWriter to be an http.Flusher")
+		panic("execute shell with pipe expected http.ResponseWriter to be an http.Flusher")
 	}
 	p := make([]byte, 1024)
 	for {
@@ -196,11 +198,11 @@ func execShelldPipe(cmd string, args []string, w http.ResponseWriter, r *http.Re
 		}
 		n_write, err := w.Write(p[:n_read])
 		if err != nil {
-			log.Printf("execShelldPipe error: %v\n", err)
+			log.Printf("execute shell with pipe error: %v\n", err)
 			os.Exit(1)
 		}
 		if n_read != n_write {
-			log.Printf("execShelldPipe failed to write data: %d read, %d written\n", n_read, n_write)
+			log.Printf("execute shell with pipe failed to write data: %d read, %d written\n", n_read, n_write)
 			os.Exit(1)
 		}
 		flusher.Flush()
@@ -216,15 +218,15 @@ func hdrNocache(w http.ResponseWriter) {
 
 func RequestHandler(basedir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("git request: %s %s %s %s\n", r.RemoteAddr, r.Method, r.URL.Path, r.Proto)
+		log.Printf("client send git request: %s %s %s %s\n", r.RemoteAddr, r.Method, r.URL.Path, r.Proto)
 		var httpParams HttpParams = parseHttpParams(r)
 		log.Printf("git params: %+v\n", httpParams)
 		if ((r.Method == "GET") && (httpParams.IsInfoReq)) || ((r.Method != "GET") && (!httpParams.IsInfoReq)) {
-			log.Printf("git request: %s %v ok\n", r.Method, httpParams.IsInfoReq)
+			log.Printf("client send git request: %s %v valid ok\n", r.Method, httpParams.IsInfoReq)
 		} else {
 			//w.WriteHeader(200)
 			//return
-			panic("bad request")
+			panic("not supported request")
 		}
 		//only support git-upload-pack because
 		if httpParams.Gitservice != "git-upload-pack" {
@@ -233,15 +235,21 @@ func RequestHandler(basedir string) http.HandlerFunc {
 				w.WriteHeader(body.StatusCode)
 				return
 			} else {
-				panic("not support Service " + httpParams.Gitservice)
+				panic("not supported request " + httpParams.Gitservice)
 			}
 		}
 		var remote = "https://" + httpParams.Repository
 		var local = path.Join(basedir, httpParams.Repository)
+		//fix go get command,repository not has .git suffix
+		if !strings.HasSuffix(local, ".git") {
+			local = local + ".git"
+		}
 		if httpParams.IsInfoReq {
-			log.Printf("git mirror: %s %s\n", remote, local)
-			if mirrorFromRemote(remote, local) != "" {
+			log.Printf("git mirror from remote : %s %s\n", remote, local)
+			err := mirrorFromRemote(remote, local)
+			if err != "" {
 				w.WriteHeader(500)
+				w.Write([]byte(err))
 			} else {
 				refs := execGitCommand(httpParams.Gitservice, "", []string{"--stateless-rpc", "--advertise-refs", local})
 				hdrNocache(w)
