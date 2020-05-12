@@ -1,9 +1,5 @@
 package main
 
-import (
-	"fmt"
-)
-
 type TokenTx struct {
 	Token  string `json:"token"`
 	From   string `json:"from"`
@@ -18,7 +14,6 @@ type TokenTxString struct {
 	Amount string `json:"amount"`
 }
 
-func DoTokenTx(app *CoreApplication, tokenTx TokenTx) uint32 {
-	fmt.Println(tokenTx)
-	return 0
+type MsgTx struct {
+	Msg string `json:"msg"`
 }

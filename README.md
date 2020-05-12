@@ -90,7 +90,7 @@ go build
 #### 新建账户
 
 ```shell
-curl -X POST http://localhost:3000/account/new
+curl -X POST http://localhost:4000/account/new
 ```
 
 结果如下：
@@ -109,7 +109,7 @@ curl -X POST http://localhost:3000/account/new
 
 测试如下
 ```shell
-curl  -H "Content-Type: application/json" -d '{"privatekey":"80d7f6a76d6bbc9893efff3721a49432f5ffdba39e0c98256d7e3fdd53e6b807d4e4cf08ec338970efc0e6b8e1dde3d4129a6bb5588ba90f72f9a0d6c0ed62ce","msg":"eyJ0b2tlbiI6IktLSyIsImZyb20iOiJENEU0Q0YwOEVDMzM4OTcwRUZDMEU2QjhFMURERTNENDEyOUE2QkI1NTg4QkE5MEY3MkY5QTBENkMwRUQ2MkNFIiwidG8iOiIiLCJhbW91bnQiOiI2MDAifQ=="}' -X POST http://localhost:3000/account/sign
+curl  -H "Content-Type: application/json" -d '{"privatekey":"80d7f6a76d6bbc9893efff3721a49432f5ffdba39e0c98256d7e3fdd53e6b807d4e4cf08ec338970efc0e6b8e1dde3d4129a6bb5588ba90f72f9a0d6c0ed62ce","msg":"eyJ0b2tlbiI6IktLSyIsImZyb20iOiJENEU0Q0YwOEVDMzM4OTcwRUZDMEU2QjhFMURERTNENDEyOUE2QkI1NTg4QkE5MEY3MkY5QTBENkMwRUQ2MkNFIiwidG8iOiIiLCJhbW91bnQiOiI2MDAifQ=="}' -X POST http://localhost:4000/account/sign
 ```
 
 结果如下：
@@ -123,7 +123,7 @@ curl  -H "Content-Type: application/json" -d '{"privatekey":"80d7f6a76d6bbc9893e
 
 测试如下：
 ```shell
-curl  -H "Content-Type: application/json" -d '{"publickey":"D4E4CF08EC338970EFC0E6B8E1DDE3D4129A6BB5588BA90F72F9A0D6C0ED62CE","sign":"25a76ff76196706d63c3190cfb97edd45f322f046cb9d78592eda1368b42c15c63a6780a777a40de626b9b9530e9433f51d8ee300b881ea55941cc53b5b27507","msg":"eyJ0b2tlbiI6IktLSyIsImZyb20iOiJENEU0Q0YwOEVDMzM4OTcwRUZDMEU2QjhFMURERTNENDEyOUE2QkI1NTg4QkE5MEY3MkY5QTBENkMwRUQ2MkNFIiwidG8iOiIiLCJhbW91bnQiOiI2MDAifQ=="}' -X POST http://localhost:3000/assets/new
+curl  -H "Content-Type: application/json" -d '{"publickey":"D4E4CF08EC338970EFC0E6B8E1DDE3D4129A6BB5588BA90F72F9A0D6C0ED62CE","sign":"25a76ff76196706d63c3190cfb97edd45f322f046cb9d78592eda1368b42c15c63a6780a777a40de626b9b9530e9433f51d8ee300b881ea55941cc53b5b27507","msg":"eyJ0b2tlbiI6IktLSyIsImZyb20iOiJENEU0Q0YwOEVDMzM4OTcwRUZDMEU2QjhFMURERTNENDEyOUE2QkI1NTg4QkE5MEY3MkY5QTBENkMwRUQ2MkNFIiwidG8iOiIiLCJhbW91bnQiOiI2MDAifQ=="}' -X POST http://localhost:4000/assets/new
 ```
 
 结果如下：
@@ -140,7 +140,7 @@ curl  -H "Content-Type: application/json" -d '{"publickey":"D4E4CF08EC338970EFC0
 两个不同账户之间可以进行相同token的交易
 
 ```shell
-curl  -H "Content-Type: application/json" -d '{"publickey":"D4E4CF08EC338970EFC0E6B8E1DDE3D4129A6BB5588BA90F72F9A0D6C0ED62CE","sign":"df2d0652c8994ddc14ec70f9532aff7fb9b4ccd3077bf9c88c936a65a18a500e380f639f410d4058deddc2d4047bee070e229b0b5e86aaa97448374ac854770d","msg":"eyJ0b2tlbiI6IktLSyIsImZyb20iOiJENEU0Q0YwOEVDMzM4OTcwRUZDMEU2QjhFMURERTNENDEyOUE2QkI1NTg4QkE5MEY3MkY5QTBENkMwRUQ2MkNFIiwidG8iOiJBNUZFQTY0NUMwOTlGNjlFRTVGQ0Q4QjY3RkU4M0VBQ0QwQ0JBQzQxMEFCQzVCOEZBNUNCNEU0NTFENUY1Q0VDIiwiYW1vdW50IjoiMzAwIn0="}' -X POST http://localhost:3000/assets/new
+curl  -H "Content-Type: application/json" -d '{"publickey":"D4E4CF08EC338970EFC0E6B8E1DDE3D4129A6BB5588BA90F72F9A0D6C0ED62CE","sign":"df2d0652c8994ddc14ec70f9532aff7fb9b4ccd3077bf9c88c936a65a18a500e380f639f410d4058deddc2d4047bee070e229b0b5e86aaa97448374ac854770d","msg":"eyJ0b2tlbiI6IktLSyIsImZyb20iOiJENEU0Q0YwOEVDMzM4OTcwRUZDMEU2QjhFMURERTNENDEyOUE2QkI1NTg4QkE5MEY3MkY5QTBENkMwRUQ2MkNFIiwidG8iOiJBNUZFQTY0NUMwOTlGNjlFRTVGQ0Q4QjY3RkU4M0VBQ0QwQ0JBQzQxMEFCQzVCOEZBNUNCNEU0NTFENUY1Q0VDIiwiYW1vdW50IjoiMzAwIn0="}' -X POST http://localhost:4000/assets/new
 ```
 
 结果如下：
@@ -158,7 +158,7 @@ curl  -H "Content-Type: application/json" -d '{"publickey":"D4E4CF08EC338970EFC0
 
 测试如下：
 ```shell
-curl  -H "Content-Type: application/json" -d '{"key": "D4E4CF08EC338970EFC0E6B8E1DDE3D4129A6BB5588BA90F72F9A0D6C0ED62CE"}' -X POST http://localhost:3000/assets/query
+curl  -H "Content-Type: application/json" -d '{"key": "D4E4CF08EC338970EFC0E6B8E1DDE3D4129A6BB5588BA90F72F9A0D6C0ED62CE"}' -X POST http://localhost:4000/assets/query
 ```
 
 结果如下：

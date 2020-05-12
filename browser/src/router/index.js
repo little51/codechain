@@ -133,6 +133,12 @@ export const constantRoutes = [
         component: () => import('@/views/assets/query'),
         meta: { title: 'Query Asset', icon: 'link' }
       }
+      // {
+      //   path: 'broadcast',
+      //   name: 'broadcast',
+      //   component: () => import('@/views/assets/broadcast'),
+      //   meta: { title: 'Broadcast msg', icon: 'link' }
+      // }
     ]
   },
   // {

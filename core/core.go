@@ -97,52 +97,19 @@ func (app *CoreApplication) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.
 	if !ok {
 		return abcitypes.ResponseDeliverTx{Code: 1, Info: "DeliverTx verification failed"}
 	}
-	tokenObj, err := app.DecodeMsg(_msgString)
+	tokenObj, msgObj, err := app.DecodeMsg(_msgString)
 	if err != nil {
 		return abcitypes.ResponseDeliverTx{Code: 1, Info: "DeliverTx DecodeMsg failed"}
 	}
-	_to := tokenObj.To
-	_from := tokenObj.From
-	_token := tokenObj.Token
-	_amount := tokenObj.Amount
-	if _to == "" || _to == _from {
-		// create new token
-		_, err := app.MongoDB_Query_CodeName(string(_token))
-		if err == nil {
-			return abcitypes.ResponseDeliverTx{Code: 1, Info: "DeliverTx CodeName has existed"}
-		} else {
-			if _, err := app.MongoDB_Add_CodeName(string(_token)); err != nil {
-				return abcitypes.ResponseDeliverTx{Code: 1, Info: "DeliverTx MongoDB_Add_CodeName failed"}
-			}
-		}
-		// add asset in assets
-		assetNew := Asset{Publickey: _from, Token: _token, Amount: _amount}
-		if _, err := app.MongoDB_Update_Assets(_from, _token, assetNew); err != nil {
-			return abcitypes.ResponseDeliverTx{Code: 1, Info: "DeliverTx MongoDB_Update_Assets failed"}
-		}
-		return abcitypes.ResponseDeliverTx{Code: 0}
+	var isTokenTx = tokenObj != TokenTx{}
+	if isTokenTx {
+		code, info := app.DeliverTx_Token(tokenObj)
+		return abcitypes.ResponseDeliverTx{Code: uint32(code), Info: info}
 	}
-	if _to != _from {
-		fromPublic, err := app.MongoDB_Query_Assets(_from, _token)
-		if err != nil {
-			info := "you have any code of " + _token
-			return abcitypes.ResponseDeliverTx{Code: 1, Info: info}
-		}
-		if fromPublic.Amount < _amount {
-			return abcitypes.ResponseDeliverTx{Code: 1, Info: "your amount is not enough"}
-		}
-		fromAssets := Asset{Publickey: _from, Token: _token, Amount: fromPublic.Amount - _amount}
-
-		toPublic, err := app.MongoDB_Query_Assets(_to, _token)
-		var toAssets Asset
-		if err != nil {
-			toAssets = Asset{Publickey: _to, Token: _token, Amount: _amount}
-		} else {
-			toAssets = Asset{Publickey: _to, Token: _token, Amount: toPublic.Amount + _amount}
-		}
-
-		app.MongoDB_Update_Assets(_from, _token, fromAssets)
-		app.MongoDB_Update_Assets(_to, _token, toAssets)
+	var isMsgTx = msgObj != MsgTx{}
+	if isMsgTx {
+		code, info := app.DeliverTx_Msg(msgObj)
+		return abcitypes.ResponseDeliverTx{Code: uint32(code), Info: info}
 	}
 	return abcitypes.ResponseDeliverTx{Code: 0}
 }

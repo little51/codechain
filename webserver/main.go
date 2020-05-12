@@ -18,7 +18,9 @@ func main() {
 	router.POST("account/sign", Sign)
 	router.POST("assets/new", NewAsset)
 	router.POST("assets/query", QueryAsset)
-	router.Run(":3000")
+	router.POST("broadcast/msg", BroadCastMsg)
+	router.POST("broadcast/gitclone", BroadCastGitClone)
+	router.Run(":4000")
 }
 
 func Cors() gin.HandlerFunc {

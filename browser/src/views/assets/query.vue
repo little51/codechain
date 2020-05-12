@@ -11,7 +11,8 @@
       v-if="responseData.length>0"
       border
       :data="responseData"
-      style="width: 98%;margin-top:20px">
+      style="width: 98%;margin-top:20px"
+    >
       <el-table-column
         prop="publickey"
         label="publickey"
