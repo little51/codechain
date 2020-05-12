@@ -17,14 +17,13 @@ func (app *CoreApplication) sendGet(url string) string {
 	if err != nil {
 		return "ioutil.ReadAll is wrong"
 	}
-	fmt.Println(string(s))
 	return string(s)
 }
 
 func (app *CoreApplication) DeliverTx_Msg(msg MsgTx) (int, string) {
 	str := strings.Split(msg.Msg, "https://")
 	if len(str) > 1 {
-		url := "http://192.168.10.9:5000/gitcache/system/mirror/" + str[1]
+		url := "http://127.0.0.1:5000/gitcache/system/mirror/" + str[1]
 		fmt.Println(url)
 		go app.sendGet(url)
 	}
