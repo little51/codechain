@@ -118,7 +118,7 @@ export default {
         "sign": `${this.signResponse.sign}`,
         "msg": this.getMsgString()
       }
-      let json = await axios.post('http://localhost:3000/assets/new', postData)
+      let json = await axios.post('http://localhost:4000/assets/new', postData)
       let result = json.data
       this.registerResponse = result
       this.register_data = this.getRegisterResponse()
@@ -139,7 +139,7 @@ export default {
         "privatekey": `${this.form_privatekey}`,
         "msg": this.getMsgString()
       }
-      let json = await axios.post('http://localhost:3000/account/sign', postData)
+      let json = await axios.post('http://localhost:4000/account/sign', postData)
       let result = json.data
       this.signResponse = result
       this.json_data = this.getSignResponse()

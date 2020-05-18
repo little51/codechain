@@ -38,7 +38,7 @@ cors_allowed_origins = ["*"]
 cd ~/codechain/webserver/
 go build
 ```
-启动后端服务，启动在`3000`端口:
+启动后端服务，启动在`4000`端口:
 ```shell
 ./webserver
 ```

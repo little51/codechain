@@ -64,7 +64,7 @@ export default {
         "key": `${this.query_key}`
       }
       setTimeout(async() => {
-        let json = await axios.post('http://localhost:3000/assets/query', postData)
+        let json = await axios.post('http://localhost:4000/assets/query', postData)
         let result = json.data
         this.queryData = result
 

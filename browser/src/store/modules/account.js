@@ -13,7 +13,7 @@ const state = {
 
 const actions = {
   async add_new_account({ commit }) {
-    let json = await axios.post(`http://localhost:3000/account/new`, {})
+    let json = await axios.post(`http://localhost:4000/account/new`, {})
     let result = json.data
     commit('set_tem_new_account', result)
     return Promise.resolve()
