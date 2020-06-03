@@ -25,6 +25,9 @@
         <el-form-item label="Amount:">
           <el-input v-model="form_msg_key_amount" :disabled="signSuccessful" />
         </el-form-item>
+        <el-form-item label="Repostory:">
+          <el-input v-model="form_msg_key_repostory" :disabled="signSuccessful" />
+        </el-form-item>
         <el-form-item v-show="!signSuccessful">
           <el-button type="primary" @click="onSubmit">Asset Register</el-button>
         </el-form-item>
@@ -67,7 +70,8 @@ export default {
       resetButton: false,
       form_msg_value_token: '',
       form_msg_key_to: '',
-      form_msg_key_amount: ''
+      form_msg_key_amount: '',
+      form_msg_key_repostory: ''
     }
   },
   watch: {
@@ -93,6 +97,7 @@ export default {
       this.form_msg_value_token = ''
       this.form_msg_key_to = ''
       this.form_msg_key_amount = ''
+      this.form_msg_key_repostory = ''
     },
     /**
      * 构造msg
@@ -102,7 +107,8 @@ export default {
         token: this.form_msg_value_token,
         from: this.form_publicKey,
         to: this.form_msg_key_to,
-        amount: this.form_msg_key_amount
+        amount: this.form_msg_key_amount,
+        repostory: this.form_msg_key_repostory
       }
       let msgValueString = JSON.stringify(msgValueObj)
       let msgValueBase64String = Base64.encode(msgValueString)

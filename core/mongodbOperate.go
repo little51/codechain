@@ -15,13 +15,14 @@ type Asset struct {
 	Publickey string `json:"publickey"`
 	Token     string `json:"token""`
 	Amount    uint32 `json:"amount"`
+	Repostory string `json:"repostory"`
 }
 
 // query data from Assets according to publickey and token
-func (app *CoreApplication) MongoDB_Query_Assets(publickey string, token string) (Asset, error) {
+func (app *CoreApplication) MongoDB_Query_Assets(publickey string, token string, repostory string) (Asset, error) {
 	collection := app.db.Database("chain").Collection("assets")
 	var assetsResult Asset
-	filter := bson.M{"publickey": string(publickey), "token": string(token)}
+	filter := bson.M{"publickey": string(publickey), "token": string(token), "repostory": string(repostory)}
 	err := collection.FindOne(context.TODO(), filter).Decode(&assetsResult)
 	if err != nil {
 		return assetsResult, err
@@ -31,9 +32,9 @@ func (app *CoreApplication) MongoDB_Query_Assets(publickey string, token string)
 }
 
 // update data from Assets according to assetsNew
-func (app *CoreApplication) MongoDB_Update_Assets(publickey string, token string, assetNew Asset) (Asset, error) {
+func (app *CoreApplication) MongoDB_Update_Assets(publickey string, token string, repostory string, assetNew Asset) (Asset, error) {
 	collection := app.db.Database("chain").Collection("assets")
-	assetOld, err := app.MongoDB_Query_Assets(publickey, token)
+	assetOld, err := app.MongoDB_Query_Assets(publickey, token, repostory)
 	if err != nil {
 		if _, err := collection.InsertOne(context.TODO(), assetNew); err != nil {
 			return assetNew, err

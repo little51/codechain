@@ -66,6 +66,7 @@ func (app *CoreApplication) DecodeMsg(value string) (TokenTx, MsgTx, error) {
 		tokenObj.To = tokenString.To
 		tempIntNum, _ := strconv.Atoi(tokenString.Amount)
 		tokenObj.Amount = uint32(tempIntNum)
+		tokenObj.Repostory = tokenString.Repostory
 		return tokenObj, msgObj, nil
 	} else {
 		msgObj.Msg = string(decodeBytes)

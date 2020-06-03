@@ -35,6 +35,7 @@ func (app *CoreApplication) DeliverTx_Token(tokenObj TokenTx) (int, string) {
 	_from := tokenObj.From
 	_token := tokenObj.Token
 	_amount := tokenObj.Amount
+	_repostorty := tokenObj.Repostory
 	if _to == "" || _to == _from {
 		// create new token
 		_, err := app.MongoDB_Query_CodeName(string(_token))
@@ -46,14 +47,14 @@ func (app *CoreApplication) DeliverTx_Token(tokenObj TokenTx) (int, string) {
 			}
 		}
 		// add asset in assets
-		assetNew := Asset{Publickey: _from, Token: _token, Amount: _amount}
-		if _, err := app.MongoDB_Update_Assets(_from, _token, assetNew); err != nil {
+		assetNew := Asset{Publickey: _from, Token: _token, Amount: _amount, Repostory: _repostorty}
+		if _, err := app.MongoDB_Update_Assets(_from, _token, _repostorty, assetNew); err != nil {
 			return 1, "DeliverTx MongoDB_Update_Assets failed"
 		}
 		return 0, ""
 	}
 	if _to != _from {
-		fromPublic, err := app.MongoDB_Query_Assets(_from, _token)
+		fromPublic, err := app.MongoDB_Query_Assets(_from, _token, "nothing")
 		if err != nil {
 			info := "you have any code of " + _token
 			return 1, info
@@ -61,16 +62,16 @@ func (app *CoreApplication) DeliverTx_Token(tokenObj TokenTx) (int, string) {
 		if fromPublic.Amount < _amount {
 			return 1, "your amount is not enough"
 		}
-		fromAssets := Asset{Publickey: _from, Token: _token, Amount: fromPublic.Amount - _amount}
-		toPublic, err := app.MongoDB_Query_Assets(_to, _token)
+		fromAssets := Asset{Publickey: _from, Token: _token, Amount: fromPublic.Amount - _amount, Repostory: "nothing"}
+		toPublic, err := app.MongoDB_Query_Assets(_to, _token, _repostorty)
 		var toAssets Asset
 		if err != nil {
-			toAssets = Asset{Publickey: _to, Token: _token, Amount: _amount}
+			toAssets = Asset{Publickey: _to, Token: _token, Amount: _amount, Repostory: _repostorty}
 		} else {
-			toAssets = Asset{Publickey: _to, Token: _token, Amount: toPublic.Amount + _amount}
+			toAssets = Asset{Publickey: _to, Token: _token, Amount: toPublic.Amount + _amount, Repostory: _repostorty}
 		}
-		app.MongoDB_Update_Assets(_from, _token, fromAssets)
-		app.MongoDB_Update_Assets(_to, _token, toAssets)
+		app.MongoDB_Update_Assets(_from, _token, "nothing", fromAssets)
+		app.MongoDB_Update_Assets(_to, _token, _repostorty, toAssets)
 	}
 	return 0, ""
 }
