@@ -72,6 +72,16 @@ func (app *CoreApplication) DeliverTx_Token(tokenObj TokenTx) (int, string) {
 		}
 		app.MongoDB_Update_Assets(_from, _token, "nothing", fromAssets)
 		app.MongoDB_Update_Assets(_to, _token, _repostorty, toAssets)
+
+		// toPublic assetsAll
+		toPublicAll, err := app.MongoDB_Query_Assets(_to, _token, "nothing")
+		var toAssetsAll Asset
+		if err != nil {
+			toAssetsAll = Asset{Publickey: _to, Token: _token, Amount: _amount, Repostory: "nothing"}
+		} else {
+			toAssetsAll = Asset{Publickey: _to, Token: _token, Amount: toPublicAll.Amount + _amount, Repostory: "nothing"}
+		}
+		app.MongoDB_Update_Assets(_to, _token, "nothing", toAssetsAll)
 	}
 	return 0, ""
 }

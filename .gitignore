@@ -15,6 +15,7 @@
 # vendor/
 /.vscode
 /pkg
+/key
 /example/kvstore/go.sum
 /core/core
 /browser/.DS_Store
