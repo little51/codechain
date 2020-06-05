@@ -54,7 +54,7 @@ func (app *CoreApplication) DeliverTx_Token(tokenObj TokenTx) (int, string) {
 		return 0, ""
 	}
 	if _to != _from {
-		fromPublic, err := app.MongoDB_Query_Assets(_from, _token, "nothing")
+		fromPublic, err := app.MongoDB_Query_Assets(_from, _token, "balance")
 		if err != nil {
 			info := "you have any code of " + _token
 			return 1, info
@@ -62,7 +62,7 @@ func (app *CoreApplication) DeliverTx_Token(tokenObj TokenTx) (int, string) {
 		if fromPublic.Amount < _amount {
 			return 1, "your amount is not enough"
 		}
-		fromAssets := Asset{Publickey: _from, Token: _token, Amount: fromPublic.Amount - _amount, Repostory: "nothing"}
+		fromAssets := Asset{Publickey: _from, Token: _token, Amount: fromPublic.Amount - _amount, Repostory: "balance"}
 		toPublic, err := app.MongoDB_Query_Assets(_to, _token, _repostorty)
 		var toAssets Asset
 		if err != nil {
@@ -70,18 +70,18 @@ func (app *CoreApplication) DeliverTx_Token(tokenObj TokenTx) (int, string) {
 		} else {
 			toAssets = Asset{Publickey: _to, Token: _token, Amount: toPublic.Amount + _amount, Repostory: _repostorty}
 		}
-		app.MongoDB_Update_Assets(_from, _token, "nothing", fromAssets)
+		app.MongoDB_Update_Assets(_from, _token, "balance", fromAssets)
 		app.MongoDB_Update_Assets(_to, _token, _repostorty, toAssets)
 
 		// toPublic assetsAll
-		toPublicAll, err := app.MongoDB_Query_Assets(_to, _token, "nothing")
+		toPublicAll, err := app.MongoDB_Query_Assets(_to, _token, "balance")
 		var toAssetsAll Asset
 		if err != nil {
-			toAssetsAll = Asset{Publickey: _to, Token: _token, Amount: _amount, Repostory: "nothing"}
+			toAssetsAll = Asset{Publickey: _to, Token: _token, Amount: _amount, Repostory: "balance"}
 		} else {
-			toAssetsAll = Asset{Publickey: _to, Token: _token, Amount: toPublicAll.Amount + _amount, Repostory: "nothing"}
+			toAssetsAll = Asset{Publickey: _to, Token: _token, Amount: toPublicAll.Amount + _amount, Repostory: "balance"}
 		}
-		app.MongoDB_Update_Assets(_to, _token, "nothing", toAssetsAll)
+		app.MongoDB_Update_Assets(_to, _token, "balance", toAssetsAll)
 	}
 	return 0, ""
 }
